@@ -398,7 +398,6 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
 	l1NthJet_1 = i;
 	foundL1Jet_1 = 1;
       }
-      //if(genPt_2 > 0 && reco::deltaR(jet, recoJet_2)<0.1 && foundL1Jet_2 == 0 ){   ////// should this be genPt_2 > 0 or recoPt_2 > 0 ?
       if(recoPt_2 > 0 && reco::deltaR(jet, recoJet_2)<0.1 && foundL1Jet_2 == 0 ){
 	l1Jet_2 = jet;
 	l1Pt_2  = jet.pt();
