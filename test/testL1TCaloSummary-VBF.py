@@ -79,12 +79,12 @@ process.source = cms.Source("PoolSource",
                             #secondaryFileNames = cms.untracked.vstring(secondaryMap[options.inputFiles[0]])
                             #fileNames = cms.untracked.vstring('/store/mc/RunIIAutumn18MiniAOD/VBFHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/ABCCF610-63D3-7046-AA37-4D8B3F1D3494.root'
 #),
-                            fileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/VBFHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/B9774176-006D-4D49-B2B6-2E2F91F6CF17.root"),
+                            fileNames = cms.untracked.vstring("file:/hdfs/store/mc/RunIIAutumn18MiniAOD/VBFHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/B9774176-006D-4D49-B2B6-2E2F91F6CF17.root"),
                             secondaryFileNames = cms.untracked.vstring(
-                                "/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/DCF0A3DC-E6B1-324C-A056-75BB31D1F0BF.root",
-                                "/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/92DAAF23-FC45-3E48-9109-0A01097D8A8C.root",
-                                "/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/6E38CBA9-8AA2-1A4C-A79E-8C096EB550DD.root",
-                                "/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/D251455B-3FEC-B744-880F-174302F59AAB.root",
+                                "file:/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/DCF0A3DC-E6B1-324C-A056-75BB31D1F0BF.root",
+                                "file:/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/92DAAF23-FC45-3E48-9109-0A01097D8A8C.root",
+                                "file:/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60001/6E38CBA9-8AA2-1A4C-A79E-8C096EB550DD.root",
+                                "file:/hdfs/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/D251455B-3FEC-B744-880F-174302F59AAB.root",
                                 #'/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/018EB922-D39E-C045-B7B9-F07C91216849.root',
                                 #'/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/018EB922-D39E-C045-B7B9-F07C91216849.root',
                                 #'/store/mc/RunIIAutumn18DR/VBFHToTauTau_M125_13TeV_powheg_pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/60000/3FFEF5C8-A16B-CB46-98A9-49B8674E96E7.root',
@@ -95,7 +95,9 @@ process.source = cms.Source("PoolSource",
 )
 
 #process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("1:3375","1:1443","1:2960","1:3805","1:3381","1:229","1:3531","1:583","1:1120","1:504","1:1454","1:874","1:1078","1:1087","1:121","1:1448","1:1456","1:177","1:2964")
+
 process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("1:286","1:2939","1:3256","1:738","1:1006","1:1637","1:3449","1:3426","1:2025","1:2030","1:2031","1:2032")
+#process.source.eventsToProcess = cms.untracked.VEventRange("1:147172","1:147240","1:147321","1:147353","1:147459")
 
 process.options = cms.untracked.PSet(
 
@@ -134,6 +136,10 @@ associatePatAlgosToolsTask(process)
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
+
+process.options.numberOfThreads=cms.untracked.uint32(4)
+process.options.numberOfStreams=cms.untracked.uint32(0)
+
 # End adding early deletion
 
 #dump_file = open('dump.py','w')
