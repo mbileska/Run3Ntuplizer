@@ -16,7 +16,8 @@
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/TauReco/interface/PFTau.h"
 #include "DataFormats/Common/interface/RefToPtr.h"
-
+#include "DataFormats/L1Trigger/interface/Jet.h"
+#include "DataFormats/L1Trigger/interface/BXVector.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
 #include <iostream>
@@ -37,7 +38,8 @@ Run3Ntuplizer::Run3Ntuplizer( const ParameterSet & cfg ) :
   regionSource_(consumes<vector <L1CaloRegion> >(cfg.getParameter<edm::InputTag>("UCTRegion"))),
   centralJets_(consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("l1UCTCentralJets"))),
   forwardJets_(consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("l1UCTForwardJets"))),
-  genJets_(consumes<vector <reco::GenJet> >(cfg.getParameter<edm::InputTag>("genJets")))
+  genJets_(consumes<vector <reco::GenJet> >(cfg.getParameter<edm::InputTag>("genJets"))),
+  stage2Jets_(consumes<BXVector<l1t::Jet>>(cfg.getParameter<edm::InputTag>("stage2Jets")))
   {
 
 
@@ -146,6 +148,25 @@ void Run3Ntuplizer::createBranches(TTree *tree){
     tree->Branch("nRecoJets",     &nRecoJets,    "nRecoJets/I");
     tree->Branch("nL1Jets",       &nL1Jets,      "nL1Jets/I");
 
+    tree->Branch("stage2Pt_1",        &stage2Pt_1,       "stage2Pt_1/D");
+    tree->Branch("stage2Eta_1",       &stage2Eta_1,      "stage2Eta_1/D");
+    tree->Branch("stage2Phi_1",       &stage2Phi_1,      "stage2Phi_1/D");
+    tree->Branch("stage2NthJet_1",    &stage2NthJet_1,   "stage2NthJet_1/I");
+
+    tree->Branch("stage2Pt_2",        &stage2Pt_2,       "stage2Pt_2/D");
+    tree->Branch("stage2Eta_2",       &stage2Eta_2,      "stage2Eta_2/D");
+    tree->Branch("stage2Phi_2",       &stage2Phi_2,      "stage2Phi_2/D");
+    tree->Branch("stage2NthJet_2",    &stage2NthJet_2,   "stage2NthJet_2/I");
+
+    tree->Branch("stage2DeltaEta",    &stage2DeltaEta,   "stage2DeltaEta/D");
+    tree->Branch("stage2DeltaPhi",    &stage2DeltaPhi,   "stage2DeltaPhi/D");
+    tree->Branch("stage2DeltaR",      &stage2DeltaR,     "stage2DeltaR/D");
+    tree->Branch("stage2Mass",        &stage2Mass,       "stage2Mass/D");
+
+    tree->Branch("stage2Matched_1",   &stage2Matched_1,  "stage2Matched_1/I");
+    tree->Branch("stage2Matched_2",   &stage2Matched_2,  "stage2Matched_2/I");
+    tree->Branch("nStage2Jets",       &nStage2Jets,      "nStage2Jets/I");
+
   }
 
 void Run3Ntuplizer::createBranchesGen(TTree *tree){
@@ -191,6 +212,8 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
    edm::Handle < vector<l1extra::L1JetParticle> > l1ForwardJets;
 
    edm::Handle < vector<reco::GenJet> > genJets;
+
+   edm::Handle<BXVector<l1t::Jet>> stage2JetHandle;
    
    edm::Handle<EcalTrigPrimDigiCollection> ecalTPGs;
    edm::Handle<HcalTrigPrimDigiCollection> hcalTPGs;
@@ -210,6 +233,9 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
   if(!isData_)
     if(!evt.getByToken(genJets_, genJets))
       std::cout<<"ERROR GETTING THE GEN JETS"<<std::endl;
+
+   if(!evt.getByToken(stage2Jets_, stage2JetHandle))
+     cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
 
   //sort the L1 jets
   vector<l1extra::L1JetParticle> l1JetsSorted;
@@ -415,9 +441,44 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
       l1DeltaR = reco::deltaR(l1Jet_1, l1Jet_2);
       l1Mass = (l1Jet_1.p4() + l1Jet_2.p4()).mass();
     }
+
+    int j = 0;
+    int foundStage2Jet_1 = 0;
+    int foundStage2Jet_2 = 0;
+    l1t::Jet stage2Jet_1;
+    l1t::Jet stage2Jet_2;
+    const BXVector<l1t::Jet> &s2j = *stage2JetHandle;
+    //for (const BXVector<l1t::Jet> &s2jet : *stage2JetHandle) {
+    for(auto s2jet : s2j) {
+      if(reco::deltaR(s2jet, recoJet_1)<0.1 && foundStage2Jet_1 == 0 ){
+        stage2Jet_1 = s2jet;
+        stage2Pt_1  = s2jet.pt();
+        stage2Eta_1 = s2jet.eta();
+        stage2Phi_1 = s2jet.phi();
+        stage2NthJet_1 = j;
+        foundStage2Jet_1 = 1;
+      }
+      if(recoPt_2 > 0 && reco::deltaR(s2jet, recoJet_2)<0.1 && foundStage2Jet_2 == 0 ){
+        stage2Jet_2 = s2jet;
+        stage2Pt_2  = s2jet.pt();
+        stage2Eta_2 = s2jet.eta();
+        stage2Phi_2 = s2jet.phi();
+        stage2NthJet_2 = j;
+        foundStage2Jet_2 = 1;
+      }
+      j++;
+    }
+
+    if(foundStage2Jet_1>0 && foundStage2Jet_2>0){
+      stage2DeltaEta = stage2Eta_1 - stage2Eta_2;
+      stage2DeltaPhi = stage2Phi_1 - stage2Phi_2;
+      stage2DeltaR = reco::deltaR(stage2Jet_1, stage2Jet_2);
+      stage2Mass = (stage2Jet_1.p4() + stage2Jet_2.p4()).mass();
+    }
     
     nRecoJets = goodJets.size();
     nL1Jets = l1JetsSorted.size();
+    nStage2Jets = s2j.size();
     efficiencyTree->Fill();
   }
 
@@ -532,10 +593,15 @@ void Run3Ntuplizer::zeroOutAllVariables(){
   l1Pt_2=-99;       l1Eta_2=-99;      l1Phi_2=-99;      l1NthJet_2=-99; 
   l1DeltaEta=-99;   l1DeltaPhi=-99;   l1DeltaR=-99;     l1Mass=-99;     
   l1Matched_1=-99;   l1Matched_2=-99;               
+  stage2Pt_1=-99;        stage2Eta_1=-99;      stage2Phi_1=-99;      stage2NthJet_1=-99;
+  stage2Pt_2=-99;        stage2Eta_2=-99;      stage2Phi_2=-99;      stage2NthJet_2=-99;
+  stage2DeltaEta=-99;    stage2DeltaPhi=-99;   stage2DeltaR=-99;     stage2Mass=-99;
+  stage2Matched_1=-99;   stage2Matched_2=-99;
   genMatched_1=-99;      genMatched_2=-99;    
   nGenJets=-99;   
   nRecoJets=-99;  
-  nL1Jets=-99;    
+  nL1Jets=-99;
+  nStage2Jets=-99; 
 
 };
 

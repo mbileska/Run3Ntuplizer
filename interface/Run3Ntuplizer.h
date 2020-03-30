@@ -63,6 +63,8 @@
 #include "DataFormats/L1CaloTrigger/interface/L1CaloRegion.h"
 #include "L1Trigger/L1TCaloLayer1/src/UCTRegion.hh"
 #include "L1Trigger/L1TCaloLayer1/src/UCTGeometry.hh"
+#include "DataFormats/L1Trigger/interface/Jet.h"
+#include "DataFormats/L1Trigger/interface/BXVector.h"
 
 //
 // class declaration
@@ -157,6 +159,7 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > centralJets_;
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > forwardJets_;
   edm::EDGetTokenT<vector <reco::GenJet> > genJets_;
+  edm::EDGetTokenT<BXVector<l1t::Jet>> stage2Jets_;
 
   std::string folderName_;
 
@@ -168,22 +171,27 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   double genPt_1, genEta_1, genPhi_1;
   double recoPt_1, recoEta_1, recoPhi_1;
   double l1Pt_1, l1Eta_1, l1Phi_1;
+  double stage2Pt_1, stage2Eta_1, stage2Phi_1;
   
   double genPt_2, genEta_2, genPhi_2;
   double recoPt_2, recoEta_2, recoPhi_2;
   double l1Pt_2, l1Eta_2, l1Phi_2;
+  double stage2Pt_2, stage2Eta_2, stage2Phi_2;
 
   int l1Matched_1, l1Matched_2;
   int genMatched_1, genMatched_2;
+  int stage2Matched_1, stage2Matched_2;
 
   double genDeltaEta, genDeltaPhi, genDeltaR, genMass;
   double recoDeltaEta, recoDeltaPhi, recoDeltaR, recoMass;
   double l1DeltaEta, l1DeltaPhi, l1DeltaR, l1Mass;
+  double stage2DeltaEta, stage2DeltaPhi, stage2DeltaR, stage2Mass;
 
-  int nGenJets, nRecoJets, nL1Jets;
+  int nGenJets, nRecoJets, nL1Jets, nStage2Jets;
 
   int l1NthJet_1, l1NthJet_2;
   int recoNthJet_1, recoNthJet_2;
+  int stage2NthJet_1, stage2NthJet_2;
 
   double recoPt_;
   bool isData_;
