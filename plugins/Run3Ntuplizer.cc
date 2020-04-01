@@ -323,14 +323,14 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
       int foundRecoJet_1 = 0;
       int foundRecoJet_2 = 0;
       for(auto jet : goodJets){
-	if(reco::deltaR(jet, genJet_1)<0.1 && foundRecoJet_1 == 0 ){
+	if(reco::deltaR(jet, genJet_1)<0.4 && foundRecoJet_1 == 0 ){
 	  recoPt_1  = jet.pt();
 	  recoEta_1 = jet.eta();
 	  recoPhi_1 = jet.phi();
 	  recoNthJet_1 = i;
 	  foundRecoJet_1 = 1;
 	}
-	if(genPt_2 > 0 && reco::deltaR(jet, genJet_2)<0.1 && foundRecoJet_2 == 0 ){
+	if(genPt_2 > 0 && reco::deltaR(jet, genJet_2)<0.4 && foundRecoJet_2 == 0 ){
 	  recoPt_2  = jet.pt();
 	  recoEta_2 = jet.eta();
 	  recoPhi_2 = jet.phi();
@@ -352,14 +352,14 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
       int foundL1Jet_1 = 0;
       int foundL1Jet_2 = 0;
       for(auto jet : l1JetsSorted){
-      if(reco::deltaR(jet, genJet_1)<0.1 && foundL1Jet_1 == 0 ){
+      if(reco::deltaR(jet, genJet_1)<0.4 && foundL1Jet_1 == 0 ){
 	l1Pt_1  = jet.pt();
 	l1Eta_1 = jet.eta();
 	l1Phi_1 = jet.phi();
 	l1NthJet_1 = i;
 	foundL1Jet_1 = 1;
       }
-      if(genPt_2 > 0 && reco::deltaR(jet, genJet_2)<0.1 && foundL1Jet_2 == 0 ){
+      if(genPt_2 > 0 && reco::deltaR(jet, genJet_2)<0.4 && foundL1Jet_2 == 0 ){
 	l1Pt_2  = jet.pt();
 	l1Eta_2 = jet.eta();
 	l1Phi_2 = jet.phi();
@@ -416,7 +416,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
     l1extra::L1JetParticle l1Jet_1;
     l1extra::L1JetParticle l1Jet_2;
     for(auto jet : l1JetsSorted){
-      if(reco::deltaR(jet, recoJet_1)<0.1 && foundL1Jet_1 == 0 ){
+      if(reco::deltaR(jet, recoJet_1)<0.4 && foundL1Jet_1 == 0 ){
 	l1Jet_1 = jet;
 	l1Pt_1  = jet.pt();
 	l1Eta_1 = jet.eta();
@@ -424,7 +424,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
 	l1NthJet_1 = i;
 	foundL1Jet_1 = 1;
       }
-      if(recoPt_2 > 0 && reco::deltaR(jet, recoJet_2)<0.1 && foundL1Jet_2 == 0 ){
+      if(recoPt_2 > 0 && reco::deltaR(jet, recoJet_2)<0.4 && foundL1Jet_2 == 0 ){
 	l1Jet_2 = jet;
 	l1Pt_2  = jet.pt();
 	l1Eta_2 = jet.eta();
@@ -450,7 +450,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
     const BXVector<l1t::Jet> &s2j = *stage2JetHandle;
     //for (const BXVector<l1t::Jet> &s2jet : *stage2JetHandle) {
     for(auto s2jet : s2j) {
-      if(reco::deltaR(s2jet, recoJet_1)<0.1 && foundStage2Jet_1 == 0 ){
+      if(reco::deltaR(s2jet, recoJet_1)<0.4 && foundStage2Jet_1 == 0 ){
         stage2Jet_1 = s2jet;
         stage2Pt_1  = s2jet.pt();
         stage2Eta_1 = s2jet.eta();
@@ -458,7 +458,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
         stage2NthJet_1 = j;
         foundStage2Jet_1 = 1;
       }
-      if(recoPt_2 > 0 && reco::deltaR(s2jet, recoJet_2)<0.1 && foundStage2Jet_2 == 0 ){
+      if(recoPt_2 > 0 && reco::deltaR(s2jet, recoJet_2)<0.4 && foundStage2Jet_2 == 0 ){
         stage2Jet_2 = s2jet;
         stage2Pt_2  = s2jet.pt();
         stage2Eta_2 = s2jet.eta();
