@@ -139,13 +139,13 @@ public :
    TBranch        *b_stage2Matched_2;   //!
    TBranch        *b_nStage2Jets;   //!
 
-   controlplot(const char* file1, const char* file2);
+   controlplot(const char* file1, const char* file2, const char* recoeta, const char* l1pt);
    virtual ~controlplot();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual void     Loop();
+   virtual void     Loop(const char* recoeta, const char* l1pt);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
    virtual void     BookHistos(const char* file2);
@@ -154,7 +154,7 @@ public :
 #endif
 
 #ifdef controlplot_cxx
-controlplot::controlplot(const char* file1, const char* file2)
+controlplot::controlplot(const char* file1, const char* file2, const char* recoeta, const char* l1pt)
 {
 
    BookHistos(file2);
