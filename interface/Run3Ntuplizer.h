@@ -160,6 +160,7 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > forwardJets_;
   edm::EDGetTokenT<vector <reco::GenJet> > genJets_;
   edm::EDGetTokenT<BXVector<l1t::Jet>> stage2Jets_;
+  edm::EDGetTokenT<vector<reco::CaloJet>> caloJets_;
 
   std::string folderName_;
 

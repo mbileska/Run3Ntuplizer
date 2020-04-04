@@ -12,6 +12,7 @@ l1NtupleProducer = cms.EDAnalyzer("Run3Ntuplizer",
                                   l1UCTForwardJets        = cms.InputTag("uct2016EmulatorDigis","Forward"),
                                   genJets                 = cms.InputTag("slimmedGenJets"),
                                   stage2Jets              = cms.InputTag("caloStage2Digis","Jet","RECO"),
+                                  caloJets                = cms.InputTag("slimmedCaloJets"),
                                   isData                  = cms.bool(True),
                                   folderName              = cms.untracked.string("Stage3Regions")
 )

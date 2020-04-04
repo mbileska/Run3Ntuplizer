@@ -39,7 +39,8 @@ Run3Ntuplizer::Run3Ntuplizer( const ParameterSet & cfg ) :
   centralJets_(consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("l1UCTCentralJets"))),
   forwardJets_(consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("l1UCTForwardJets"))),
   genJets_(consumes<vector <reco::GenJet> >(cfg.getParameter<edm::InputTag>("genJets"))),
-  stage2Jets_(consumes<BXVector<l1t::Jet>>(cfg.getParameter<edm::InputTag>("stage2Jets")))
+  stage2Jets_(consumes<BXVector<l1t::Jet>>(cfg.getParameter<edm::InputTag>("stage2Jets"))),
+  caloJets_(consumes<vector<reco::CaloJet>>(cfg.getParameter<edm::InputTag>("caloJets")))
   {
 
 
@@ -205,7 +206,8 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
    event = evt.id().event();
    Handle<L1CaloRegionCollection> regions;
    
-   std::vector<pat::Jet> goodJets;
+   //std::vector<pat::Jet> goodJets;
+   std::vector<reco::CaloJet> goodJets;
    std::vector<pat::Jet> goodJetsAK8;
   
    edm::Handle < vector<l1extra::L1JetParticle> > l1CentralJets;
@@ -214,7 +216,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
    edm::Handle < vector<reco::GenJet> > genJets;
 
    edm::Handle<BXVector<l1t::Jet>> stage2JetHandle;
-   
+
    edm::Handle<EcalTrigPrimDigiCollection> ecalTPGs;
    edm::Handle<HcalTrigPrimDigiCollection> hcalTPGs;
    
@@ -256,9 +258,12 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
   ESHandle<L1CaloHcalScale> hcalScale;
   es.get<L1CaloHcalScaleRcd>().get(hcalScale);
 
-  Handle<vector<pat::Jet> > jets;
-  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Taus
-    for (const pat::Jet &jet : *jets) {
+  //Handle<vector<pat::Jet> > jets;
+  Handle<vector<reco::CaloJet>> jets;
+  //if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Taus
+  if(evt.getByToken(caloJets_, jets)){
+    //for (const pat::Jet &jet : *jets) {
+    for (const reco::CaloJet &jet : *jets) {
       recoJet_pt->Fill( jet.pt() );
       recoJet_eta->Fill( jet.eta() );
       recoJet_phi->Fill( jet.phi() );
