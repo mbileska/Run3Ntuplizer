@@ -66,6 +66,7 @@
 #include "DataFormats/L1Trigger/interface/L1JetParticle.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/Tau.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
 //#include "L1Trigger/L1TCaloLayer1/src/L1UCTCollections.h"
 
 #include "DataFormats/L1Trigger/interface/BXVector.h"
@@ -240,6 +241,7 @@ private:
 
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
+  edm::EDGetTokenT<vector<pat::Muon> > muonSrc_;
 
   std::vector< std::vector< std::vector < uint32_t > > > ecalLUT;
   std::vector< std::vector< std::vector < uint32_t > > > hcalLUT;
@@ -309,6 +311,7 @@ private:
 
   int nGenJets, nRecoJets, nL1Jets;
   int l1Matched_1;
+  int nMuons;
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
   edm::Service<TFileService> tfs_;  
@@ -353,6 +356,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
 		iConfig.getParameter<double>("miscActivityFraction")),
   jetSrc_(    consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
+  muonSrc_( consumes<vector<pat::Muon> >(iConfig.getParameter<edm::InputTag>("recoMuons"))),
   genSrc_((        iConfig.getParameter<edm::InputTag>( "genParticles"))),
   activityFraction12(iConfig.getParameter<double>("activityFraction12"))
 {
@@ -885,6 +889,19 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     recoEta_1 = goodJetsAK8.at(0).eta();
     recoPhi_1 = goodJetsAK8.at(0).phi();
     recoJet_1 = goodJetsAK8.at(0);
+    //TLorentzVector s1, s2;
+    //s1.SetPtEtaPhiE(recoJet_1.subjets("SoftDropPuppi")[0]->pt(),recoJet_1.subjets("SoftDropPuppi")[0]->eta(),recoJet_1.subjets("SoftDropPuppi")[0]->phi(),recoJet_1.subjets("SoftDropPuppi")[0]->et());
+    //s2.SetPtEtaPhiE(recoJet_1.subjets("SoftDropPuppi")[1]->pt(),recoJet_1.subjets("SoftDropPuppi")[1]->eta(),recoJet_1.subjets("SoftDropPuppi")[1]->phi(),recoJet_1.subjets("SoftDropPuppi")[1]->et());
+    //std::cout<<"subjet pt and deltaR: "<<s1.Pt()<<"\t"<<s2.Pt()<<"\t"<<s1.DeltaR(s2)<<std::endl;
+
+    Handle<vector<pat::Muon> > muons;
+
+    if(evt.getByToken(muonSrc_, muons)){
+      for (const pat::Muon &muon : *muons) {
+        if(muon.isLooseMuon() && muon.pt() > 3 && reco::deltaR(muon, recoJet_1) < 0.8) { nMuons++; std::cout<<reco::deltaR(muon, recoJet_1)<<"\t"<<muon.pt()<<std::endl; }
+      }
+    }
+    std::cout<<"nMuons: "<<nMuons<<std::endl;
 
     int i = 0;
     int foundL1Jet_1 = 0;
@@ -919,6 +936,7 @@ void BoostedJetStudies::zeroOutAllVariables(){
   vbfBDT=-99; recoPt_=-99;
   nGenJets=-99; nRecoJets=-99; nL1Jets=-99;
   l1Matched_1=-99;
+  nMuons=0;
 }
 
 void BoostedJetStudies::print() {
@@ -965,6 +983,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("l1NthJet_1",    &l1NthJet_1,   "l1NthJet_1/I");
     tree->Branch("l1NTau_1",      &l1NTau_1,     "l1NTau_1/I");
 
+    tree->Branch("nMuons",        &nMuons,      "nMuons/I");
     tree->Branch("l1Matched_1",   &l1Matched_1, "l1Matched_1/I");
     tree->Branch("nRecoJets",     &nRecoJets,    "nRecoJets/I");
     tree->Branch("nL1Jets",       &nL1Jets,      "nL1Jets/I");
