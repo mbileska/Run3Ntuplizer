@@ -80,12 +80,16 @@ using std::bitset;
 
 #pragma extra_include "TLorentzVector.h";
 #pragma link C++ class std::vector<TLorentzVector>;
+//include: vector<l1extra::L1JetParticle>        "l1extraParticles"          "IsoTau"          "RECO"
+//include: BXVector<l1t::Tau>                    "caloStage2Digis"           "Tau"             "RECO"
 
 using namespace l1tcalo;
 using namespace l1extra;
 using namespace std;
 
 bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i.pt()>j.pt()); };
+
+bool compareByPtIsoTaus (l1t::Tau i,l1t::Tau j) { return(i.pt()>j.pt()); };
 
 float towerEtaMap[28]= {
     0.0435,
@@ -241,7 +245,8 @@ private:
 
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
-  edm::EDGetTokenT<vector<pat::Muon> > muonSrc_;
+  edm::EDGetTokenT<vector <l1extra::L1JetParticle> > tauSrc_;
+  //edm::EDGetTokenT<BXVector<l1t::Tau> > tauSrc_;
 
   std::vector< std::vector< std::vector < uint32_t > > > ecalLUT;
   std::vector< std::vector< std::vector < uint32_t > > > hcalLUT;
@@ -299,8 +304,9 @@ private:
   std::vector<int> nSubJets, nBHadrons, HFlav, nL1Taus;
   std::vector<string> etaBits, phiBits, mEtaBits, mPhiBits, etaBits12, phiBits12, mEtaBits12, mPhiBits12;
   std::vector<std::vector<int>> subJetHFlav;
-  std::vector<float> tau1, tau2, tau3;
+  std::vector<float> tau1, tau2, tau3, tauIsoEt;
 
+  std::vector<TLorentzVector> *isoTaus  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allRegions  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allEcalTPGs  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allHcalTPGs  = new std::vector<TLorentzVector>;
@@ -311,7 +317,6 @@ private:
 
   int nGenJets, nRecoJets, nL1Jets;
   int l1Matched_1;
-  int nMuons;
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
   edm::Service<TFileService> tfs_;  
@@ -354,10 +359,11 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   uctParameters(iConfig.getParameter<double>("activityFraction"), 
 		iConfig.getParameter<double>("ecalActivityFraction"), 
 		iConfig.getParameter<double>("miscActivityFraction")),
-  jetSrc_(    consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
+  jetSrc_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
-  muonSrc_( consumes<vector<pat::Muon> >(iConfig.getParameter<edm::InputTag>("recoMuons"))),
-  genSrc_((        iConfig.getParameter<edm::InputTag>( "genParticles"))),
+  tauSrc_( consumes<vector <l1extra::L1JetParticle> >(iConfig.getParameter<edm::InputTag>("l1IsoTaus"))),
+  //tauSrc_( consumes<BXVector<l1t::Tau> >(iConfig.getParameter<edm::InputTag>("l1IsoTaus"))),
+  genSrc_(( iConfig.getParameter<edm::InputTag>( "genParticles"))),
   activityFraction12(iConfig.getParameter<double>("activityFraction12"))
 {
   std::vector<double> pumLUTData;
@@ -443,6 +449,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<pat::Jet> goodJets;
   std::vector<pat::Jet> goodJetsAK8;
 
+  isoTaus->clear();
   allRegions->clear();
   allEcalTPGs->clear();
   allHcalTPGs->clear();
@@ -465,6 +472,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau1.clear();
   tau2.clear();
   tau3.clear();
+  tauIsoEt.clear();
 
   // Start Running Layer 1
   edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
@@ -889,19 +897,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     recoEta_1 = goodJetsAK8.at(0).eta();
     recoPhi_1 = goodJetsAK8.at(0).phi();
     recoJet_1 = goodJetsAK8.at(0);
-    //TLorentzVector s1, s2;
-    //s1.SetPtEtaPhiE(recoJet_1.subjets("SoftDropPuppi")[0]->pt(),recoJet_1.subjets("SoftDropPuppi")[0]->eta(),recoJet_1.subjets("SoftDropPuppi")[0]->phi(),recoJet_1.subjets("SoftDropPuppi")[0]->et());
-    //s2.SetPtEtaPhiE(recoJet_1.subjets("SoftDropPuppi")[1]->pt(),recoJet_1.subjets("SoftDropPuppi")[1]->eta(),recoJet_1.subjets("SoftDropPuppi")[1]->phi(),recoJet_1.subjets("SoftDropPuppi")[1]->et());
-    //std::cout<<"subjet pt and deltaR: "<<s1.Pt()<<"\t"<<s2.Pt()<<"\t"<<s1.DeltaR(s2)<<std::endl;
-
-    Handle<vector<pat::Muon> > muons;
-
-    if(evt.getByToken(muonSrc_, muons)){
-      for (const pat::Muon &muon : *muons) {
-        if(muon.isLooseMuon() && muon.pt() > 3 && reco::deltaR(muon, recoJet_1) < 0.8) { nMuons++; std::cout<<reco::deltaR(muon, recoJet_1)<<"\t"<<muon.pt()<<std::endl; }
-      }
-    }
-    std::cout<<"nMuons: "<<nMuons<<std::endl;
 
     int i = 0;
     int foundL1Jet_1 = 0;
@@ -922,6 +917,26 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
       }
     }
   }  
+  edm::Handle < vector<l1extra::L1JetParticle> > l1IsoTaus;
+  //edm::Handle < BXVector<l1t::Tau> > l1IsoTaus;
+  //std::vector<l1t::Tau> l1TausSorted;
+  if(evt.getByToken(tauSrc_, l1IsoTaus)){
+    for ( vector<l1extra::L1JetParticle>::const_iterator l1IsoTau = l1IsoTaus->begin(); l1IsoTau != l1IsoTaus->end(); l1IsoTau++) {
+      TLorentzVector temp ;     
+      temp.SetPtEtaPhiE(l1IsoTau->pt(),l1IsoTau->eta(),l1IsoTau->phi(),l1IsoTau->et());
+      isoTaus->push_back(temp);
+    //for( BXVector<l1t::Tau>::const_iterator l1IsoTau = l1IsoTaus->begin(); l1IsoTau != l1IsoTaus->end(); l1IsoTau++ ){
+      //l1TausSorted.push_back(*l1IsoTau);
+    }
+
+    //std::sort(l1TausSorted.begin(),l1TausSorted.end(),compareByPtIsoTaus); 
+    //for(unsigned int i = 0; i < l1TausSorted.size(); i++){
+    //  TLorentzVector temp ;
+    //  temp.SetPtEtaPhiE(l1TausSorted.at(i).pt(),l1TausSorted.at(i).eta(),l1TausSorted.at(i).phi(),l1TausSorted.at(i).et());
+    //  isoTaus->push_back(temp);
+    //  tauIsoEt.push_back(l1TausSorted.at(i).isoEt());   
+    //}
+  } 
 
   efficiencyTree->Fill();
 }
@@ -936,7 +951,6 @@ void BoostedJetStudies::zeroOutAllVariables(){
   vbfBDT=-99; recoPt_=-99;
   nGenJets=-99; nRecoJets=-99; nL1Jets=-99;
   l1Matched_1=-99;
-  nMuons=0;
 }
 
 void BoostedJetStudies::print() {
@@ -983,7 +997,6 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("l1NthJet_1",    &l1NthJet_1,   "l1NthJet_1/I");
     tree->Branch("l1NTau_1",      &l1NTau_1,     "l1NTau_1/I");
 
-    tree->Branch("nMuons",        &nMuons,      "nMuons/I");
     tree->Branch("l1Matched_1",   &l1Matched_1, "l1Matched_1/I");
     tree->Branch("nRecoJets",     &nRecoJets,    "nRecoJets/I");
     tree->Branch("nL1Jets",       &nL1Jets,      "nL1Jets/I");
@@ -992,6 +1005,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("tau1",          &tau1);
     tree->Branch("tau2",          &tau2);
     tree->Branch("tau3",          &tau3);
+    tree->Branch("tauIsoEt",        &tauIsoEt);
     tree->Branch("nSubJets",      &nSubJets);
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
@@ -1005,6 +1019,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("mEtaBits12",      &mEtaBits12);
     tree->Branch("mPhiBits12",      &mPhiBits12);
 
+    tree->Branch("isoTaus", "vector<TLorentzVector>", &isoTaus, 32000, 0);
     tree->Branch("allRegions", "vector<TLorentzVector>", &allRegions, 32000, 0);
     tree->Branch("hcalTPGs", "vector<TLorentzVector>", &allHcalTPGs, 32000, 0);
     tree->Branch("ecalTPGs", "vector<TLorentzVector>", &allEcalTPGs, 32000, 0);

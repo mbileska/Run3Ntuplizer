@@ -61,6 +61,8 @@ process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 
+process.load('L1Trigger.L1TCalorimeter.simCaloStage2Digis_cfi')
+
 process.load('L1Trigger.L1TCaloSummary.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
@@ -73,7 +75,7 @@ process.l1NtupleProducer.useHCALLUT = cms.bool(False)
 process.l1NtupleProducer.useHFLUT   = cms.bool(False)
 process.l1NtupleProducer.useLSB     = cms.bool(True)
 process.l1NtupleProducer.verbose    = cms.bool(False)
-process.l1NtupleProducer.activityFraction12 = cms.double(0.015875)
+process.l1NtupleProducer.activityFraction12 = cms.double(0.00396875)
 
 process.uct2016EmulatorDigis.useECALLUT = cms.bool(False)
 process.uct2016EmulatorDigis.useHCALLUT = cms.bool(False)
@@ -83,7 +85,7 @@ process.uct2016EmulatorDigis.verbose = cms.bool(False)
 process.uct2016EmulatorDigis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 sourceFileList = open("inputFileList-MINI.txt","r")
 secondaryFileList = open("inputFileList.txt","r")
@@ -135,7 +137,7 @@ process.TFileService = cms.Service(
 )
 
 
-process.L1TRawToDigi_Stage2 = cms.Task(process.caloLayer1Digis, process.caloStage2Digis)
+process.L1TRawToDigi_Stage2 = cms.Task(process.caloLayer1Digis, process.caloStage2Digis, process.simCaloStage2Digis)
 process.RawToDigi_short = cms.Sequence(process.L1TRawToDigi_Stage2)
 process.p = cms.Path(process.RawToDigi_short*process.l1tCaloLayer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
 process.e = cms.EndPath(process.out)

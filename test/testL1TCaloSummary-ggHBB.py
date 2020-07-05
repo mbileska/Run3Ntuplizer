@@ -59,6 +59,12 @@ process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 
+process.load('L1Trigger.L1TCalorimeter.simCaloStage2Digis_cfi')
+#process.load('L1Trigger.L1TCalorimeter.caloParams_2018_v1_4_cfi')
+from L1Trigger.L1TCalorimeter.caloParams_cfi import caloParamsSource
+import L1Trigger.L1TCalorimeter.caloParams_cfi
+caloStage2Params = L1Trigger.L1TCalorimeter.caloParams_cfi.caloParams.clone()
+
 process.load('L1Trigger.L1TCaloSummary.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
@@ -69,7 +75,7 @@ process.l1NtupleProducer.ecalToken = cms.InputTag("l1tCaloLayer1Digis","","L1TCa
 #process.l1NtupleProducer.hcalToken = cms.InputTag("hcalDigis")
 process.l1NtupleProducer.hcalToken = cms.InputTag("l1tCaloLayer1Digis","","L1TCaloSummaryTest")
 #process.l1NtupleProducer.activityFraction = cms.double(0.9)
-process.l1NtupleProducer.activityFraction12 = cms.double(0.015875)
+process.l1NtupleProducer.activityFraction12 = cms.double(0.00396875)
 
 process.uct2016EmulatorDigis.useECALLUT = cms.bool(False)
 process.uct2016EmulatorDigis.useHCALLUT = cms.bool(False)
@@ -79,7 +85,7 @@ process.uct2016EmulatorDigis.verbose = cms.bool(False)
 process.uct2016EmulatorDigis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 process.source = cms.Source("PoolSource",
                             #fileNames = cms.untracked.vstring(inputFiles)#,
@@ -98,7 +104,7 @@ process.source = cms.Source("PoolSource",
                             )
 )
 
-#process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("1:734","1:961","1:966","1:982")
+process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("1:734","1:961","1:966","1:982")
 #process.source.eventsToProcess = cms.untracked.VEventRange("1:960303")
 
 process.options = cms.untracked.PSet(
@@ -127,12 +133,12 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ggHBB.root")
 )
 
-process.p = cms.Path(process.RawToDigi*process.l1tCaloLayer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
+process.p = cms.Path(process.RawToDigi*process.l1tCaloLayer1Digis*process.simCaloStage2Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
 
 process.e = cms.EndPath(process.out)
 
-#process.schedule = cms.Schedule(process.p,process.e)
-process.schedule = cms.Schedule(process.p)
+process.schedule = cms.Schedule(process.p,process.e)
+#process.schedule = cms.Schedule(process.p)
 
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
