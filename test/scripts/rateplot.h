@@ -26,7 +26,7 @@ public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
    TFile *fileName;
-   TH1F *l1jetpt, *l1jeteta, *l1jetphi;
+   TH1F *l1jetpt, *l1jeteta, *l1jetphi, *seedpt, *seedeta, *seedphi;
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
@@ -38,6 +38,10 @@ public :
    Double_t        recoEta_1;
    Double_t        recoPhi_1;
    Int_t           recoNthJet_1;
+   Double_t        seedPt_1;
+   Double_t        seedEta_1;
+   Double_t        seedPhi_1;
+   Int_t           seedNthJet_1;
    Double_t        l1Pt_1;
    Double_t        l1Eta_1;
    Double_t        l1Phi_1;
@@ -62,11 +66,14 @@ public :
    vector<string>  *phiBits12;
    vector<string>  *mEtaBits12;
    vector<string>  *mPhiBits12;
+   vector<string>  *regionEta;
+   vector<string>  *regionPhi;
    vector<TLorentzVector> *allRegions;
    vector<TLorentzVector> *hcalTPGs;
    vector<TLorentzVector> *ecalTPGs;
    vector<TLorentzVector> *caloClusters;
    vector<TLorentzVector> *l1Jets;
+   vector<TLorentzVector> *seed180;
    vector<TLorentzVector> *ak8Jets;
    vector<TLorentzVector> *subJets;
 
@@ -78,6 +85,10 @@ public :
    TBranch        *b_recoEta_1;   //!
    TBranch        *b_recoPhi_1;   //!
    TBranch        *b_recoNthJet_1;   //!
+   TBranch        *b_seedPt_1;   //!
+   TBranch        *b_seedEta_1;   //!
+   TBranch        *b_seedPhi_1;   //!
+   TBranch        *b_seedNthJet_1;   //!
    TBranch        *b_l1Pt_1;   //!
    TBranch        *b_l1Eta_1;   //!
    TBranch        *b_l1Phi_1;   //!
@@ -102,11 +113,14 @@ public :
    TBranch        *b_phiBits12;   //!
    TBranch        *b_mEtaBits12;   //!
    TBranch        *b_mPhiBits12;   //!
+   TBranch        *b_regionEta;   //!
+   TBranch        *b_regionPhi;   //!
    TBranch        *b_allRegions;   //!
    TBranch        *b_hcalTPGs;   //!
    TBranch        *b_ecalTPGs;   //!
    TBranch        *b_caloClusters;   //!
    TBranch        *b_l1Jets;   //!
+   TBranch        *b_seed180;   //!
    TBranch        *b_ak8Jets;   //!
    TBranch        *b_subJets;   //!
 
@@ -201,8 +215,12 @@ void rateplot::Init(TTree *tree)
    ecalTPGs = 0;
    caloClusters = 0;
    l1Jets = 0;
+   seed180 = 0;
    ak8Jets = 0;
    subJets = 0;
+   regionEta = 0;
+   regionPhi = 0;
+
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
@@ -216,6 +234,10 @@ void rateplot::Init(TTree *tree)
    fChain->SetBranchAddress("recoEta_1", &recoEta_1, &b_recoEta_1);
    fChain->SetBranchAddress("recoPhi_1", &recoPhi_1, &b_recoPhi_1);
    fChain->SetBranchAddress("recoNthJet_1", &recoNthJet_1, &b_recoNthJet_1);
+   fChain->SetBranchAddress("seedPt_1", &seedPt_1, &b_seedPt_1);
+   fChain->SetBranchAddress("seedEta_1", &seedEta_1, &b_seedEta_1);
+   fChain->SetBranchAddress("seedPhi_1", &seedPhi_1, &b_seedPhi_1);
+   fChain->SetBranchAddress("seedNthJet_1", &seedNthJet_1, &b_seedNthJet_1);
    fChain->SetBranchAddress("l1Pt_1", &l1Pt_1, &b_l1Pt_1);
    fChain->SetBranchAddress("l1Eta_1", &l1Eta_1, &b_l1Eta_1);
    fChain->SetBranchAddress("l1Phi_1", &l1Phi_1, &b_l1Phi_1);
@@ -240,11 +262,14 @@ void rateplot::Init(TTree *tree)
    fChain->SetBranchAddress("phiBits12", &phiBits12, &b_phiBits12);
    fChain->SetBranchAddress("mEtaBits12", &mEtaBits12, &b_mEtaBits12);
    fChain->SetBranchAddress("mPhiBits12", &mPhiBits12, &b_mPhiBits12);
+   fChain->SetBranchAddress("regionEta", &regionEta, &b_regionEta);
+   fChain->SetBranchAddress("regionPhi", &regionPhi, &b_regionPhi);
    fChain->SetBranchAddress("allRegions", &allRegions, &b_allRegions);
    fChain->SetBranchAddress("hcalTPGs", &hcalTPGs, &b_hcalTPGs);
    fChain->SetBranchAddress("ecalTPGs", &ecalTPGs, &b_ecalTPGs);
    fChain->SetBranchAddress("caloClusters", &caloClusters, &b_caloClusters);
    fChain->SetBranchAddress("l1Jets", &l1Jets, &b_l1Jets);
+   fChain->SetBranchAddress("seed180", &seed180, &b_seed180);
    fChain->SetBranchAddress("ak8Jets", &ak8Jets, &b_ak8Jets);
    fChain->SetBranchAddress("subJets", &subJets, &b_subJets);
    Notify();

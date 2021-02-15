@@ -85,12 +85,15 @@ process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
-sourceFileList = open("inputFileList-MINI.txt","r")
-secondaryFileList = open("inputFileList.txt","r")
+#sourceFileList = open("inputFileList-MINI.txt","r")
+#secondaryFileList = open("inputFileList.txt","r")
 
 process.source = cms.Source("PoolSource",
-                             fileNames = cms.untracked.vstring(sourceFileList),
-                             secondaryFileNames = cms.untracked.vstring(secondaryFileList)
+    fileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/284/00000/C4531AF0-FBE2-FC47-A79F-0F515D5F87D9.root'),
+    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/RAW/v1/000/325/284/00000/0803D7A1-76FF-B94C-8688-F75F29649DAB.root')
+
+#                             fileNames = cms.untracked.vstring(sourceFileList),
+#                             secondaryFileNames = cms.untracked.vstring(secondaryFileList)
 #                            fileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/684/00000/7A23D558-A9D3-A546-95FA-12B56317C0A0.root',
 #                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/484/00000/C08A230D-9ADC-F14E-AF94-3048FA9BA9F0.root',
 #                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/449/00000/357A6203-9FE7-2F49-A7D3-04033E1F3DEC.root',

@@ -38,10 +38,19 @@ void rateplot::Loop(const char* pattern, const char* l1pt)
    double l1ptcut;
    sstrm2 >> l1ptcut;
    double SF = 1.2;
+   int nevt = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
+
+      nevt++;
+      bool fill = true;
+      if(seed180->size() > 0) {
+         seedpt->Fill(seed180->at(0).Pt());
+         seedeta->Fill(seed180->at(0).Eta());
+         seedphi->Fill(seed180->at(0).Phi());
+      }
       vector<TLorentzVector> l1JetsSorted;
       for( vector<TLorentzVector>::const_iterator l1Jet = l1Jets->begin(); l1Jet != l1Jets->end(); l1Jet++ ){
          l1JetsSorted.push_back(*l1Jet);
@@ -60,26 +69,37 @@ void rateplot::Loop(const char* pattern, const char* l1pt)
       }
       if(PATTERN == "condensed" && l1JetsSorted.size() > 0) {
          for(size_t i = 0; i < l1JetsSorted.size(); i++){
-            if(mEtaBits->at(m[i]) == "000000001010" || mPhiBits->at(m[i]) == "000000001010"){
+            if(fill & mEtaBits->at(m[i]) == "000000001010" || mPhiBits->at(m[i]) == "000000001010"){
                l1jetpt->Fill(l1JetsSorted.at(i).Pt()*SF);
                l1jeteta->Fill(l1JetsSorted.at(i).Eta());
                l1jetphi->Fill(l1JetsSorted.at(i).Phi());
-               break;
+               fill = false;
             }
          }
       }
       if(PATTERN == "condensed12" && l1JetsSorted.size() > 0) {
          for(size_t i = 0; i < l1JetsSorted.size(); i++){
-            if(mEtaBits12->at(m[i]) == "000000001010" || mPhiBits12->at(m[i]) == "000000001010"){
+            if(fill & mEtaBits12->at(m[i]) == "000000001010" || mPhiBits12->at(m[i]) == "000000001010"){
                l1jetpt->Fill(l1JetsSorted.at(i).Pt()*SF);
                l1jeteta->Fill(l1JetsSorted.at(i).Eta());
                l1jetphi->Fill(l1JetsSorted.at(i).Phi());
-               break;
+               fill = false;
+            }
+         }
+      }
+      if(PATTERN == "taupattern" && l1JetsSorted.size() > 0) {
+         for(size_t i = 0; i < l1JetsSorted.size(); i++){
+            if(fill && (regionEta->at(m[i]) == "010" || regionPhi->at(m[i]) == "010" || regionEta->at(m[i]) == "110" || regionEta->at(m[i]) == "011" || regionPhi->at(m[i]) == "110" || regionPhi->at(m[i]) == "011")){
+               l1jetpt->Fill(l1JetsSorted.at(i).Pt()*SF);
+               l1jeteta->Fill(l1JetsSorted.at(i).Eta());
+               l1jetphi->Fill(l1JetsSorted.at(i).Phi());
+               fill = false;
             }
          }
       }
       l1JetsSorted.clear();
    }
+   cout<<nevt<<endl;
 }
 
 void rateplot::BookHistos(const char* file2){
@@ -103,5 +123,21 @@ void rateplot::BookHistos(const char* file2){
    l1jetphi = new TH1F (name,"l1jetphi", 20, -M_PI, M_PI);
    l1jetphi->SetTitle("Leading L1 jet");
    l1jetphi->GetXaxis()->SetTitle("#phi");
+
+   sprintf(name, "seedpt");
+   seedpt = new TH1F (name,"seedpt", 40, 0, 500);
+   seedpt->SetTitle("Leading L1 jet");
+   seedpt->GetXaxis()->SetTitle("p_{T} [GeV]");
+
+   sprintf(name, "seedeta");
+   seedeta = new TH1F (name,"l1jeteta", binnum, binb);
+   seedeta->SetTitle("Leading L1 jet");
+   seedeta->GetXaxis()->SetTitle("#eta");
+
+   sprintf(name, "seedphi");
+   seedphi = new TH1F (name,"l1jetphi", 20, -M_PI, M_PI);
+   seedphi->SetTitle("Leading L1 jet");
+   seedphi->GetXaxis()->SetTitle("#phi");
+
 }
 

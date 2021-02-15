@@ -245,6 +245,9 @@ private:
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
 
+  edm::EDGetTokenT<edm::TriggerResults> trgresultsORIGToken_;
+  edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
+
   std::vector< std::vector< std::vector < uint32_t > > > ecalLUT;
   std::vector< std::vector< std::vector < uint32_t > > > hcalLUT;
   std::vector< std::vector< uint32_t > > hfLUT;
@@ -292,10 +295,12 @@ private:
   int genId, genMother;
   double recoPt_1, recoEta_1, recoPhi_1;
   double l1Pt_1, l1Eta_1, l1Phi_1;
+  double seedPt_1, seedEta_1, seedPhi_1;
   
   int l1NthJet_1;
   int l1NTau_1;
   int recoNthJet_1;
+  int seedNthJet_1;
 
   double vbfBDT;
   double recoPt_;
@@ -309,6 +314,7 @@ private:
   std::vector<TLorentzVector> *allHcalTPGs  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *caloClusters  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
 
@@ -360,8 +366,10 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
   //genSrc_((        iConfig.getParameter<edm::InputTag>( "genParticles"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
-  activityFraction12(iConfig.getParameter<double>("activityFraction12"))
-{
+  activityFraction12(iConfig.getParameter<double>("activityFraction12")),
+  trgresultsORIGToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT") )),
+  trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger")))
+{    
   std::vector<double> pumLUTData;
   char pumLUTString[10];
   for(uint32_t pumBin = 0; pumBin < nPumBins; pumBin++) {
@@ -444,12 +452,14 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
    
   std::vector<pat::Jet> goodJets;
   std::vector<pat::Jet> goodJetsAK8;
+  std::vector<pat::TriggerObjectStandAlone> seeds;
 
   allRegions->clear();
   allEcalTPGs->clear();
   allHcalTPGs->clear();
   caloClusters->clear();
   l1Jets->clear();
+  seed180->clear();
   ak8Jets->clear();
   subJets->clear();
   nL1Taus.clear();
@@ -469,6 +479,25 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau1.clear();
   tau2.clear();
   tau3.clear();
+
+  // Accessing existing L1 seed stored in MINIAOD
+  edm::Handle<edm::TriggerResults> trigResults;
+  evt.getByToken(trgresultsORIGToken_, trigResults);
+  const edm::TriggerNames &names = evt.triggerNames(*trigResults);
+
+  edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects;
+  evt.getByToken(trigobjectsMINIAODToken_, triggerObjects);
+  for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
+    obj.unpackFilterLabels(evt,*trigResults);
+    obj.unpackPathNames(names);
+    //cout<<obj.filterLabels().size()<<endl;
+    for (unsigned h = 0; h < obj.filterLabels().size(); ++h){
+      string myfillabl=obj.filterLabels()[h];
+      if(myfillabl=="hltL1sSingleJet180") { seeds.push_back(obj); }
+      cout << "Trigger object name, pt, eta, phi: " << myfillabl<<", " << obj.pt()<<", "<<obj.eta()<<", "<<obj.phi() << endl;
+    }
+  }
+
 
   // Start Running Layer 1
   edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
@@ -937,6 +966,24 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         i++;
       }
     }
+
+    int j = 0;
+    int foundSeed_1 = 0;
+    if(seeds.size() > 0){
+      TLorentzVector temp;
+      temp.SetPtEtaPhiE(seeds.at(0).pt(),seeds.at(0).eta(),seeds.at(0).phi(),seeds.at(0).pt());
+      seed180->push_back(temp);
+      for(auto seed : seeds){
+        if(reco::deltaR(seed, recoJet_1)<0.4 && foundSeed_1 == 0 ){
+          seedPt_1  = seed.pt();
+          seedEta_1 = seed.eta();
+          seedPhi_1 = seed.phi();
+          seedNthJet_1 = j;
+        }
+        j++;
+      }
+    }
+
   }
 
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -961,11 +1008,9 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
 void BoostedJetStudies::zeroOutAllVariables(){
   genPt_1=-99; genEta_1=-99; genPhi_1=-99; genM_1=-99; genDR=99; genId=-99; genMother=-99;
-  recoPt_1=-99; recoEta_1=-99; recoPhi_1=-99;
-  l1Pt_1=-99; l1Eta_1=-99; l1Phi_1=-99;
-  l1NthJet_1=-99; 
-  l1NTau_1=-99; 
-  recoNthJet_1=-99; 
+  seedPt_1=-99; seedEta_1=-99; seedPhi_1=-99; seedNthJet_1=-99;
+  recoPt_1=-99; recoEta_1=-99; recoPhi_1=-99; recoNthJet_1=-99;
+  l1Pt_1=-99; l1Eta_1=-99; l1Phi_1=-99; l1NthJet_1=-99; l1NTau_1=-99;
   vbfBDT=-99; recoPt_=-99;
   nGenJets=-99; nRecoJets=-99; nL1Jets=-99;
   l1Matched_1=-99;
@@ -1012,6 +1057,11 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("genId",         &genId,       "genId/I");
     tree->Branch("genMother",     &genMother,   "genMother/I");
 
+    tree->Branch("seedPt_1",      &seedPt_1,     "seedPt_1/D");
+    tree->Branch("seedEta_1",     &seedEta_1,    "seedEta_1/D");
+    tree->Branch("seedPhi_1",     &seedPhi_1,    "seedPhi_1/D");
+    tree->Branch("seedNthJet_1",  &seedNthJet_1, "seedNthJet_1/I");
+
     tree->Branch("recoPt_1",      &recoPt_1,     "recoPt_1/D");
     tree->Branch("recoEta_1",     &recoEta_1,    "recoEta_1/D");
     tree->Branch("recoPhi_1",     &recoPhi_1,    "recoPhi_1/D");
@@ -1051,6 +1101,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("ecalTPGs", "vector<TLorentzVector>", &allEcalTPGs, 32000, 0);
     tree->Branch("caloClusters", "vector<TLorentzVector>", &caloClusters, 32000, 0);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
+    tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("ak8Jets", "vector<TLorentzVector>", &ak8Jets, 32000, 0);
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
   }

@@ -82,19 +82,11 @@ process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
-                            #fileNames = cms.untracked.vstring(inputFiles)#,
-                            #secondaryFileNames = cms.untracked.vstring(secondaryMap[options.inputFiles[0]])
                             fileNames = cms.untracked.vstring(
-#				'file:/hdfs/store/user/ojalvo/BoostedGHBB-Events/pickevents-mini.root'
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18MiniAOD/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/MINIAODSIM/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/1B0FC5E0-ACF7-0C49-8262-1F95F23C896B.root'
+				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
 ),
                             secondaryFileNames = cms.untracked.vstring(
-#				'file:/hdfs/store/user/ojalvo/BoostedGHBB-Events/pickevents-raw.root',
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18DR/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/4187DAD9-3092-E448-9F4E-6B3616479547.root',
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18DR/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/2FE6F8A3-9F3C-E14B-8F5F-F45BBE34AA30.root',
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18DR/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/44D65997-B07E-8143-8B7D-B15A04DDC388.root',
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18DR/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/6B447B66-341D-E742-A73A-AB39EEDD25CA.root',
-				'root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18DR/SUSYGluGluToBBHToBB_NarrowWidth_M-1200_TuneCP5_13TeV-pythia8/GEN-SIM-RAW/FlatPU28to62NZS_102X_upgrade2018_realistic_v15-v1/110000/8A7F5240-F850-934B-A3AE-A0FFC746FDCB.root',
+				'file:/eos/user/p/pdas/L1Boosted/ggHbb/DR/RunIIAutumn18DRPremix_step1_21Dec_0_5300.root'
                             )
 )
 
