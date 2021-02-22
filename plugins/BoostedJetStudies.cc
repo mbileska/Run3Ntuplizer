@@ -69,6 +69,7 @@
 //#include "L1Trigger/L1TCaloLayer1/src/L1UCTCollections.h"
 
 #include "DataFormats/L1Trigger/interface/BXVector.h"
+#include "DataFormats/L1Trigger/interface/Jet.h"
 #include "DataFormats/L1Trigger/interface/Tau.h"
 #include "DataFormats/L1Trigger/interface/Muon.h"
 
@@ -245,8 +246,7 @@ private:
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
 
-  edm::EDGetTokenT<edm::TriggerResults> trgresultsORIGToken_;
-  edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
+  edm::EDGetTokenT<BXVector<l1t::Jet>> stage2JetToken_;
 
   std::vector< std::vector< std::vector < uint32_t > > > ecalLUT;
   std::vector< std::vector< std::vector < uint32_t > > > hcalLUT;
@@ -367,8 +367,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   //genSrc_((        iConfig.getParameter<edm::InputTag>( "genParticles"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   activityFraction12(iConfig.getParameter<double>("activityFraction12")),
-  trgresultsORIGToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT") )),
-  trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger")))
+  stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO") ))
 {    
   std::vector<double> pumLUTData;
   char pumLUTString[10];
@@ -452,7 +451,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
    
   std::vector<pat::Jet> goodJets;
   std::vector<pat::Jet> goodJetsAK8;
-  std::vector<pat::TriggerObjectStandAlone> seeds;
+  std::vector<l1t::Jet> seeds;
 
   allRegions->clear();
   allEcalTPGs->clear();
@@ -481,23 +480,14 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau3.clear();
 
   // Accessing existing L1 seed stored in MINIAOD
-  edm::Handle<edm::TriggerResults> trigResults;
-  evt.getByToken(trgresultsORIGToken_, trigResults);
-  const edm::TriggerNames &names = evt.triggerNames(*trigResults);
-
-  edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects;
-  evt.getByToken(trigobjectsMINIAODToken_, triggerObjects);
-  for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
-    obj.unpackFilterLabels(evt,*trigResults);
-    obj.unpackPathNames(names);
-    //cout<<obj.filterLabels().size()<<endl;
-    for (unsigned h = 0; h < obj.filterLabels().size(); ++h){
-      string myfillabl=obj.filterLabels()[h];
-      if(myfillabl=="hltL1sSingleJet180") { seeds.push_back(obj); }
-      cout << "Trigger object name, pt, eta, phi: " << myfillabl<<", " << obj.pt()<<", "<<obj.eta()<<", "<<obj.phi() << endl;
-    }
+  edm::Handle<BXVector<l1t::Jet>> stage2Jets;
+  if(!evt.getByToken(stage2JetToken_, stage2Jets)) cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
+  evt.getByToken(stage2JetToken_, stage2Jets);
+  const BXVector<l1t::Jet> &s2j = *stage2Jets;
+  for(auto obj : s2j) {
+    //cout << "Stage 2 jet pt, eta, phi: " << obj.pt()<<", "<<obj.eta()<<", "<<obj.phi() << endl;
+    seeds.push_back(obj);
   }
-
 
   // Start Running Layer 1
   edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;

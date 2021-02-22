@@ -83,12 +83,27 @@ process.uct2016EmulatorDigis.verbose = cms.bool(False)
 process.uct2016EmulatorDigis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 #sourceFileList = open("inputFileList-MINI.txt","r")
 #secondaryFileList = open("inputFileList.txt","r")
 
 process.source = cms.Source("PoolSource",
+#     fileNames = cms.untracked.vstring('/store/data/Run2018D/ZeroBias/MINIAOD/PromptReco-v1/000/320/466/00000/3EBF0EC3-B194-E811-A208-FA163E0FE8C7.root'),
+#     secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/ZeroBias/RAW/v1/000/320/466/00000/9CD406A3-2193-E811-B22F-02163E019FCB.root')
+#    fileNames = cms.untracked.vstring('/store/data/Run2018D/EGamma/MINIAOD/22Jan2019-v2/110000/FFDB0E58-29C4-1A40-8B10-326AB6E69261.root'),
+#    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/1C671588-40AA-E811-9E4E-FA163E216E14.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/32A93493-40AA-E811-B853-FA163EC3883A.root', 
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/4C74213E-41AA-E811-9DA7-02163E012D2C.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/669F8667-40AA-E811-AD92-02163E013DD4.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/74E90356-40AA-E811-A199-02163E0148F8.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/A4E46810-41AA-E811-9EDC-FA163E778BCD.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/CAF13C6E-40AA-E811-95D7-FA163EC6F411.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/D4CD0182-40AA-E811-B26A-FA163E9F847F.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/E6930CA4-40AA-E811-9417-FA163E8F8D7C.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/72599442-55AF-E811-8A34-02163E010DD0.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/A02DD284-55AF-E811-AB93-FA163EDE7E69.root',
+#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/A4E95E3D-55AF-E811-A93E-FA163EB7D2ED.root')
     fileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/284/00000/C4531AF0-FBE2-FC47-A79F-0F515D5F87D9.root'),
     secondaryFileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/RAW/v1/000/325/284/00000/0803D7A1-76FF-B94C-8688-F75F29649DAB.root')
 
@@ -158,5 +173,5 @@ process.options.numberOfStreams=cms.untracked.uint32(0)
 
 # End adding early deletion
 
-#dump_file = open('dump.py','w')
-#dump_file.write(process.dumpPython())
+dump_file = open('dump.py','w')
+dump_file.write(process.dumpPython())
