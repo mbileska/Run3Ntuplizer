@@ -83,50 +83,37 @@ process.uct2016EmulatorDigis.verbose = cms.bool(False)
 process.uct2016EmulatorDigis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 #sourceFileList = open("inputFileList-MINI.txt","r")
 #secondaryFileList = open("inputFileList.txt","r")
 
 process.source = cms.Source("PoolSource",
-#     fileNames = cms.untracked.vstring('/store/data/Run2018D/ZeroBias/MINIAOD/PromptReco-v1/000/320/466/00000/3EBF0EC3-B194-E811-A208-FA163E0FE8C7.root'),
-#     secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/ZeroBias/RAW/v1/000/320/466/00000/9CD406A3-2193-E811-B22F-02163E019FCB.root')
-#    fileNames = cms.untracked.vstring('/store/data/Run2018D/EGamma/MINIAOD/22Jan2019-v2/110000/FFDB0E58-29C4-1A40-8B10-326AB6E69261.root'),
-#    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/1C671588-40AA-E811-9E4E-FA163E216E14.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/32A93493-40AA-E811-B853-FA163EC3883A.root', 
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/4C74213E-41AA-E811-9DA7-02163E012D2C.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/669F8667-40AA-E811-AD92-02163E013DD4.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/74E90356-40AA-E811-A199-02163E0148F8.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/A4E46810-41AA-E811-9EDC-FA163E778BCD.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/CAF13C6E-40AA-E811-95D7-FA163EC6F411.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/D4CD0182-40AA-E811-B26A-FA163E9F847F.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/321/880/00000/E6930CA4-40AA-E811-9417-FA163E8F8D7C.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/72599442-55AF-E811-8A34-02163E010DD0.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/A02DD284-55AF-E811-AB93-FA163EDE7E69.root',
-#				'/store/data/Run2018D/EGamma/RAW/v1/000/322/118/00000/A4E95E3D-55AF-E811-A93E-FA163EB7D2ED.root')
-    fileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/284/00000/C4531AF0-FBE2-FC47-A79F-0F515D5F87D9.root'),
-    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/RAW/v1/000/325/284/00000/0803D7A1-76FF-B94C-8688-F75F29649DAB.root')
+    fileNames = cms.untracked.vstring('/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/257FD10B-6D35-7441-BA80-EC6F5205715A.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/45960F97-D686-9C48-9217-18B01B2C2171.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/51C2690F-6EE4-FB4A-9085-59E2EEDB915A.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/C8C9C76B-C6CD-3B41-A187-0F476F68A8F3.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/6541FFB6-9673-2641-9C1D-AAFE0CE36D1E.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/7A4F1CEA-9005-EB47-B4A0-2C9163205D6D.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/A92D9A3F-848E-8949-94AB-51FA607F3095.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/77E4AD09-EFC0-2D41-8A72-D9A58D7B8611.root',
+					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/B3A2CADC-75F3-A242-9060-A290CDE14221.root'),
+    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/881D06AE-2D89-E811-B2AC-FA163E8F9107.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/14B165C7-2B89-E811-B118-FA163E31F8EA.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/70D101BD-2289-E811-BD8B-FA163E308A6C.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/70032A26-1989-E811-961F-FA163E354E33.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/62996682-2589-E811-A753-02163E017EC6.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/6868D96E-1489-E811-8480-FA163E50A19F.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/E46E586C-1589-E811-ADE3-FA163EF3AACF.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/EC057557-2389-E811-8205-02163E010C3C.root',
+					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/DC1A7C29-1389-E811-832B-FA163E98E77A.root')
 
 #                             fileNames = cms.untracked.vstring(sourceFileList),
 #                             secondaryFileNames = cms.untracked.vstring(secondaryFileList)
-#                            fileNames = cms.untracked.vstring('/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/684/00000/7A23D558-A9D3-A546-95FA-12B56317C0A0.root',
-#                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/484/00000/C08A230D-9ADC-F14E-AF94-3048FA9BA9F0.root',
-#                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/449/00000/357A6203-9FE7-2F49-A7D3-04033E1F3DEC.root',
-#                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/458/00000/E492B615-2F02-944E-A4D2-695290837592.root',
-#                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/430/00000/76B231DA-491C-E244-B3C6-C89FEE3AD921.root',
-#                                                              '/store/data/Run2018E/ZeroBias/MINIAOD/PromptReco-v1/000/325/283/00000/4A15B34D-ED00-784B-8AE9-CF03D646BF92.root'
-#                                                          ),
-#                            secondaryFileNames = cms.untracked.vstring(
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/684/00000/DAC64D8B-241A-2546-9100-65B44FFCCF83.root',
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/484/00000/AF499180-B00E-6B40-9836-F0C5DC7D8497.root',
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/449/00000/9D10EB45-D6E9-684E-8489-DDF7BC4A9A3E.root',
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/458/00000/8CD5C424-E460-9541-94EC-679125C2ECE4.root',
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/430/00000/7A52F28E-9F80-4845-92E2-1A71F82301F8.root',
-#                                '/store/data/Run2018E/ZeroBias/RAW/v1/000/325/283/00000/2C9521F5-8784-FA47-963B-64BE55AB9CA7.root'
-#                                                                   )
 )
 
-#process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("321149:1055","320757:185")
+#process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("")
+#process.source.eventsToProcess = cms.untracked.VEventRange("319756:991181466","319756:928807791","319756:608032744","319756:309750363","319756:701995845","319756:181355847","319756:192667981","319756:192601340","319756:644859036","319756:110119890")
 
 process.options = cms.untracked.PSet(
 
@@ -173,5 +160,5 @@ process.options.numberOfStreams=cms.untracked.uint32(0)
 
 # End adding early deletion
 
-dump_file = open('dump.py','w')
-dump_file.write(process.dumpPython())
+#dump_file = open('dump.py','w')
+#dump_file.write(process.dumpPython())

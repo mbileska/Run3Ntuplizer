@@ -290,6 +290,7 @@ private:
 
   TTree* l1Tree;
   int run, lumi, event;
+  //ULong64_t event;
 
   double genPt_1, genEta_1, genPhi_1, genM_1, genDR;
   int genId, genMother;
@@ -306,6 +307,7 @@ private:
   double recoPt_;
   std::vector<int> nSubJets, nBHadrons, HFlav, nL1Taus;
   std::vector<string> etaBits, phiBits, mEtaBits, mPhiBits, etaBits12, phiBits12, mEtaBits12, mPhiBits12, regionEta, regionPhi;
+  std::vector<bool> hotTower;
   std::vector<std::vector<int>> subJetHFlav;
   std::vector<float> tau1, tau2, tau3;
 
@@ -472,6 +474,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   mPhiBits12.clear();
   regionEta.clear();
   regionPhi.clear();
+  hotTower.clear();
   nSubJets.clear();
   nBHadrons.clear();
   subJetHFlav.clear();
@@ -487,6 +490,9 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   for(auto obj : s2j) {
     //cout << "Stage 2 jet pt, eta, phi: " << obj.pt()<<", "<<obj.eta()<<", "<<obj.phi() << endl;
     seeds.push_back(obj);
+    TLorentzVector temp;
+    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
+    seed180->push_back(temp);
   }
 
   // Start Running Layer 1
@@ -753,17 +759,20 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     //nL1Taus.push_back(object->nTaus());
     //std::cout<<"printing the tower ET:"<<std::endl;
     bool activeTower[12][12];
+    bool flagHotTower = false;
     uint32_t activityLevel = object->et()*activityFraction12;
     for(uint32_t iPhi = 0; iPhi < 12; iPhi++){
       for(uint32_t iEta = 0; iEta < 12; iEta++){
-        //std::cout<< object->boostedJetTowers()[iEta*12+iPhi]<<setw(20)<<" "; 
+        //std::cout<< object->boostedJetTowers()[iEta*12+iPhi]<<setw(20)<<" ";
         uint32_t towerET = object->boostedJetTowers()[iEta*12+iPhi];
+        if(towerET > object->et()*0.97) flagHotTower = true;
         if(towerET > activityLevel) {
           activeTower[iEta][iPhi] = true;
         }
         else activeTower[iEta][iPhi] = false;
       }
     }
+    hotTower.push_back(flagHotTower);
     bitset<12> activeTowerEtaPattern = 0;
     for(uint32_t iEta = 0; iEta < 12; iEta++){
       bool activeStrip = false;
@@ -960,9 +969,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     int j = 0;
     int foundSeed_1 = 0;
     if(seeds.size() > 0){
-      TLorentzVector temp;
-      temp.SetPtEtaPhiE(seeds.at(0).pt(),seeds.at(0).eta(),seeds.at(0).phi(),seeds.at(0).pt());
-      seed180->push_back(temp);
       for(auto seed : seeds){
         if(reco::deltaR(seed, recoJet_1)<0.4 && foundSeed_1 == 0 ){
           seedPt_1  = seed.pt();
@@ -1085,6 +1091,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("mPhiBits12",      &mPhiBits12);
     tree->Branch("regionEta",       &regionEta);
     tree->Branch("regionPhi",       &regionPhi);
+    tree->Branch("hotTower",        &hotTower);
 
     tree->Branch("allRegions", "vector<TLorentzVector>", &allRegions, 32000, 0);
     tree->Branch("hcalTPGs", "vector<TLorentzVector>", &allHcalTPGs, 32000, 0);

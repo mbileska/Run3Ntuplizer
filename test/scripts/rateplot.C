@@ -46,11 +46,26 @@ void rateplot::Loop(const char* pattern, const char* l1pt)
 
       nevt++;
       bool fill = true;
+
+      double fillpt, filleta, fillphi;
       if(seed180->size() > 0) {
-         seedpt->Fill(seed180->at(0).Pt());
-         seedeta->Fill(seed180->at(0).Eta());
-         seedphi->Fill(seed180->at(0).Phi());
+              fillpt = -99; filleta = 0; fillphi = 0;
+              for(size_t i = 0; i < seed180->size(); i++) {
+                      if(seed180->at(i).Pt() > fillpt && abs(seed180->at(i).Eta()) < 2.5){
+                              fillpt = seed180->at(i).Pt();
+                              filleta = seed180->at(i).Eta();
+                              fillphi = seed180->at(i).Phi();
+                      }
+              }
+              if(fillpt > 0) {
+                      seedpt->Fill(fillpt);
+                      seedeta->Fill(filleta);
+                      seedphi->Fill(fillphi);
+              }
       }
+
+
+
       vector<TLorentzVector> l1JetsSorted;
       for( vector<TLorentzVector>::const_iterator l1Jet = l1Jets->begin(); l1Jet != l1Jets->end(); l1Jet++ ){
          l1JetsSorted.push_back(*l1Jet);
