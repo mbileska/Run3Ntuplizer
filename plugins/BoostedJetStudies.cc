@@ -247,6 +247,7 @@ private:
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
 
   edm::EDGetTokenT<BXVector<l1t::Jet>> stage2JetToken_;
+  edm::EDGetTokenT<BXVector<l1t::Tau>> stage2TauToken_;
 
   std::vector< std::vector< std::vector < uint32_t > > > ecalLUT;
   std::vector< std::vector< std::vector < uint32_t > > > hcalLUT;
@@ -317,6 +318,7 @@ private:
   std::vector<TLorentzVector> *caloClusters  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
 
@@ -369,7 +371,8 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   //genSrc_((        iConfig.getParameter<edm::InputTag>( "genParticles"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   activityFraction12(iConfig.getParameter<double>("activityFraction12")),
-  stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO") ))
+  stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
+  stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO")))
 {    
   std::vector<double> pumLUTData;
   char pumLUTString[10];
@@ -461,6 +464,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   caloClusters->clear();
   l1Jets->clear();
   seed180->clear();
+  tauseed->clear();
   ak8Jets->clear();
   subJets->clear();
   nL1Taus.clear();
@@ -493,6 +497,17 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     TLorentzVector temp;
     temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
     seed180->push_back(temp);
+  }
+
+  edm::Handle<BXVector<l1t::Tau>> stage2Taus;
+  if(!evt.getByToken(stage2TauToken_, stage2Taus)) cout<<"ERROR GETTING THE STAGE 2 TAUS"<<std::endl;
+  evt.getByToken(stage2TauToken_, stage2Taus);
+  const BXVector<l1t::Tau> &s2t = *stage2Taus;
+  for(auto obj : s2t) {
+    cout << "Stage 2 tau pt, eta, phi: " << obj.pt()<<", "<<obj.eta()<<", "<<obj.phi() << endl;
+    TLorentzVector temp;
+    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
+    tauseed->push_back(temp);
   }
 
   // Start Running Layer 1
@@ -801,14 +816,16 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
     int nActiveRegion = 0;
     for(int i = 0; i < 9; i++){
-      if(object->boostedJetRegionET()[i] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[i] == 1) nActiveRegion++;
+      //if(object->boostedJetRegionET()[i] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[i] == 1) nActiveRegion++;
+      if(object->boostedJetRegionET()[i] > object->et()*16*activityFraction12) nActiveRegion++;
     }
     nL1Taus.push_back(nActiveRegion); 
     bitset<3> activeRegionEtaPattern = 0;
     for(uint32_t iEta = 0; iEta < 3; iEta++){
       bool activeStrip = false;
       for(uint32_t iPhi = 0; iPhi < 3; iPhi++){
-        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[3*iEta+iPhi] == 1) activeStrip = true;
+        //if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[3*iEta+iPhi] == 1) activeStrip = true;
+        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12) activeStrip = true;
       }
       if(activeStrip) activeRegionEtaPattern |= (0x1 << iEta);
     }
@@ -816,7 +833,8 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     for(uint32_t iPhi = 0; iPhi < 3; iPhi++){
       bool activeStrip = false;
       for(uint32_t iEta = 0; iEta < 3; iEta++){
-        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[3*iEta+iPhi] == 1) activeStrip = true;
+        //if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12 && object->boostedJetRegionTauVeto()[3*iEta+iPhi] == 1) activeStrip = true;
+        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12) activeStrip = true;
       }
       if(activeStrip) activeRegionPhiPattern |= (0x1 << iPhi);
     }
@@ -1099,6 +1117,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("caloClusters", "vector<TLorentzVector>", &caloClusters, 32000, 0);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
+    tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
     tree->Branch("ak8Jets", "vector<TLorentzVector>", &ak8Jets, 32000, 0);
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
   }
