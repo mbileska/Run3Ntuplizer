@@ -1,7 +1,10 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("L1TCaloSummaryTest")
+#process = cms.Process("L1TCaloSummaryTest")
+from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
+
+process = cms.Process('RAW2DIGI',Run2_2018)
 
 #import EventFilter.L1TXRawToDigi.util as util
 
@@ -39,13 +42,13 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
-process.load('Configuration.Geometry.GeometryExtended2016Reco_cff')
-process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v10', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '112X_dataRun2_v7', '')
 
 process.hcalDigis.saveQIE10DataNSamples = cms.untracked.vint32( 10)
 process.hcalDigis.saveQIE10DataTags = cms.untracked.vstring( "MYDATA" )
@@ -61,7 +64,7 @@ process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 
-process.load('L1Trigger.L1TCaloSummary.uct2016EmulatorDigis_cfi')
+process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 
@@ -139,7 +142,6 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ZeroBias.root")
 )
 
-
 process.L1TRawToDigi_Stage2 = cms.Task(process.caloLayer1Digis, process.caloStage2Digis)
 process.RawToDigi_short = cms.Sequence(process.L1TRawToDigi_Stage2)
 process.p = cms.Path(process.RawToDigi_short*process.l1tCaloLayer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
@@ -150,6 +152,12 @@ process.schedule = cms.Schedule(process.p)
 
 #from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 #associatePatAlgosToolsTask(process)
+
+# Automatic addition of the customisation function from L1Trigger.Configuration.customiseSettings
+from L1Trigger.Configuration.customiseSettings import L1TSettingsToCaloParams_2018_v1_3
+
+#call to customisation function L1TSettingsToCaloParams_2018_v1_3 imported from L1Trigger.Configuration.customiseSettings
+process = L1TSettingsToCaloParams_2018_v1_3(process)
 
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
