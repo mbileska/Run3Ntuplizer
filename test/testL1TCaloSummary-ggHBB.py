@@ -59,7 +59,7 @@ process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 
-process.load('L1Trigger.L1TCaloSummary.uct2016EmulatorDigis_cfi')
+process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 
