@@ -21,7 +21,7 @@ git cms-merge-topic pallabidas:l1t-integration-test-Run3NTuplizer
 cd L1Trigger
 git clone -b L1boosted_L1TOffline git@github.com:pallabidas/Run3Ntuplizer.git
 cd ..
-USER_CXXFLAGS="-Wno-error=reorder -Wno-unused-variable" scram b -j 8
+scram b -j 10
 
 cd L1Trigger/Run3Ntuplizer/test
 
