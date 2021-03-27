@@ -1,7 +1,3 @@
-/**
-   
-*/
-
 // system include files
 #include <memory>
 
@@ -20,17 +16,6 @@
 
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
-
-#include "L1Trigger/L1TCaloLayer1/src/UCTLayer1.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTCrate.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTCard.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTRegion.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTTower.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTGeometry.hh"
-
-#include "L1Trigger/L1TCaloLayer1/src/UCTObject.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTSummaryCard.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTGeometryExtended.hh"
 
 #include "DataFormats/L1Trigger/interface/L1EmParticle.h"
 #include "DataFormats/L1Trigger/interface/L1EmParticleFwd.h"
@@ -61,7 +46,6 @@
 #include "DataFormats/L1GlobalCaloTrigger/interface/L1GctCollections.h"
 #include "DataFormats/TauReco/interface/PFTau.h"
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
-#include "DataFormats/L1Trigger/interface/L1JetParticle.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/Tau.h"
 
@@ -74,140 +58,10 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 
-#include "L1Trigger/L1TCaloLayer1/src/L1TCaloLayer1FetchLUTs.hh"
-#include "L1Trigger/L1TCaloLayer1/src/UCTLogging.hh"
-#include <bitset>
-using std::bitset;
-
-#pragma extra_include "TLorentzVector.h";
-#pragma link C++ class std::vector<TLorentzVector>;
-
-using namespace l1tcalo;
 using namespace l1extra;
 using namespace std;
 
 bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i.pt()>j.pt()); };
-
-float towerEtaMap[28]= {
-    0.0435,
-    0.1305, 0.2175, 0.3045, 0.3915, 0.4785,
-    0.5655, 0.6525, 0.7395, 0.8265, 0.9135,
-    1.0005, 1.0875, 1.1745, 1.2615, 1.3485,
-    1.4355, 1.5225, 1.6095, 1.6965, 1.7835,
-    1.8705, 1.9575, 2.0445, 2.217, 2.391,
-    2.565, //2.739,
-    2.913,
-    };
-
-float towerPhiMap[72]=
-    {-0.131, -0.044, 0.044, 0.131, 0.218, 0.305, 0.393, 0.480, 0.567, 0.654, 0.742, 0.829, 0.916, 1.004, 1.091, 1.178, 1.265, 1.353, 1.440, 1.527, 1.614, 1.702, 1.789, 1.876, 1.963, 2.051, 2.138, 2.225, 2.313, 2.400, 2.487, 2.574, 2.662, 2.749, 2.836, 2.923, 3.011, 3.098,
-      -3.098, -3.011, -2.923, -2.836, -2.749, -2.662, -2.574, -2.487, -2.400, -2.313, -2.225, -2.138, -2.051, -1.963, -1.876, -1.789, -1.702, -1.614, -1.527, -1.440, -1.353, -1.265, -1.178, -1.091, -1.004, -0.916, -0.829, -0.742, -0.654, -0.567, -0.480, -0.393, -0.305, -0.218};
-
-float getRecoEta(int ieta, short zside){
-  float eta = -999;
-  if(ieta<0 || ieta>(28*2)){
-    std::cout<<"Error!!! towereta out of bounds in triggerGeometryTools.h "<<std::endl;
-    std::cout<<"ieta "<<ieta<<std::endl;
-    exit(0);
-  }
-  if(zside == 1)
-    eta = towerEtaMap[ieta];
-  else if(zside == -1)
-    eta = towerEtaMap[ieta];
-  else{
-    std::cout<<"Error!!! zside out of bounds in triggerGeometryTools.h "<<std::endl;
-    std::cout<<"zside "<<zside<<std::endl;
-    exit(0);
-  }
-  return eta;
-};
-
-float getRecoEtaNew(int caloEta){
-  float eta = -999.;
-  static bool first = true;
-  static double twrEtaValues[42];
-  if(first) {
-    twrEtaValues[0] = 0;
-    for(unsigned int i = 0; i < 20; i++) {
-      twrEtaValues[i + 1] = 0.0436 + i * 0.0872;
-    }
-    twrEtaValues[21] = 1.785;
-    twrEtaValues[22] = 1.880;
-    twrEtaValues[23] = 1.9865;
-    twrEtaValues[24] = 2.1075;
-    twrEtaValues[25] = 2.247;
-    twrEtaValues[26] = 2.411;
-    twrEtaValues[27] = 2.575;
-    twrEtaValues[28] = 2.825;
-    twrEtaValues[29] = 999.;
-    twrEtaValues[30] = (3.15+2.98)/2.;
-    twrEtaValues[31] = (3.33+3.15)/2.;
-    twrEtaValues[32] = (3.50+3.33)/2.;
-    twrEtaValues[33] = (3.68+3.50)/2.;
-    twrEtaValues[34] = (3.68+3.85)/2.;
-    twrEtaValues[35] = (3.85+4.03)/2.;
-    twrEtaValues[36] = (4.03+4.20)/2.;
-    twrEtaValues[37] = (4.20+4.38)/2.;
-    twrEtaValues[38] = (4.74+4.38*3)/4.;
-    twrEtaValues[39] = (4.38+4.74*3)/4.;
-    twrEtaValues[40] = (5.21+4.74*3)/4.;
-    twrEtaValues[41] = (4.74+5.21*3)/4.;
-    first = false;
-  }
-  uint32_t absCaloEta = abs(caloEta);
-  if(absCaloEta <= 41) {
-    if(caloEta < 0)
-      eta =  -twrEtaValues[absCaloEta];
-    else
-      eta = +twrEtaValues[absCaloEta];
-  }
-  return eta;
-};
-
-float getRecoPhi(int iphi){
-  return towerPhiMap[iphi-1];
-};
-
-float getRecoPhiNew(int caloPhi){
-  float phi = -999.;
-  if(caloPhi > 72) phi = +999.;
-  uint32_t absCaloPhi = std::abs(caloPhi) - 1;
-  if(absCaloPhi < 36)
-    phi = (((double) absCaloPhi + 0.5) * 0.0872);
-  else
-    phi = (-(71.5 - (double) absCaloPhi) * 0.0872);
-  return phi;
-};
-
-int TPGEtaRange(int ieta){
-  int iEta = 0;
-  if(ieta < 0)
-    iEta = ieta + 28;
-  else if(ieta > 0)
-    iEta = ieta + 27;
-  return iEta;
-};
-
-bitset<12> mergedbits(bitset<12> bitsin){
-  bitset<12> one = (0x1);
-  bitset<12> finalbits = 0x0;
-  bitset<12> upper_mask = 0xFFE;
-  bitset<12> lower_mask = 0x0;
-  bitset<12> x = bitsin;
-  for(int j = 0; j < 11; j++){
-    if(bitsin[j+1] == bitsin[j]){
-      x = x & upper_mask;
-      x = x >> 1;
-      finalbits = (finalbits & lower_mask) | x;
-    }
-    else{
-      finalbits = (finalbits & lower_mask)| x ;
-      upper_mask = upper_mask << 1;
-      lower_mask = (lower_mask << 1) | one;
-    }
-  }
-  return finalbits;
-};
 
 //
 // class declaration
@@ -227,58 +81,15 @@ private:
   virtual void endJob() override;
 
   virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
-  //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
-  //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-  //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-
-  void print();
 
   // ----------member data ---------------------------
-  edm::EDGetTokenT<EcalTrigPrimDigiCollection> ecalTPSource;
-  std::string ecalTPSourceLabel;
-  edm::EDGetTokenT<HcalTrigPrimDigiCollection> hcalTPSource;
-  std::string hcalTPSourceLabel;
-
-  edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
+  edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
 
   edm::EDGetTokenT<BXVector<l1t::Jet>> stage2JetToken_;
   edm::EDGetTokenT<BXVector<l1t::Tau>> stage2TauToken_;
-
-  std::vector<std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> > ecalLUT;
-  std::vector<std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> > hcalLUT;
-  std::vector<std::array<std::array<uint32_t, nEtBins>, nHfEtaBins> > hfLUT;
-  std::vector<unsigned int> ePhiMap;
-  std::vector<unsigned int> hPhiMap;
-  std::vector<unsigned int> hfPhiMap;
-
-  uint32_t nPumBins;
-
-  std::vector< std::vector< std::vector < uint32_t > > > pumLUT;
-
-  std::vector< UCTTower* > twrList;
-
-  bool useLSB;
-  bool useCalib;
-  bool useECALLUT;
-  bool useHCALLUT;
-  bool useHFLUT;
-
-  double caloScaleFactor;
-
-  uint32_t jetSeed;
-  uint32_t tauSeed;
-  float tauIsolationFactor;
-  uint32_t eGammaSeed;
-  double eGammaIsolationFactor;
-
-  bool verbose;
-  int fwVersion;
-  double activityFraction12;
-
-  UCTLayer1 *layer1;
-  UCTSummaryCard *summaryCard;
+  edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
 
   TH1F* nEvents;
   TH1F* recoJet_pt;
@@ -291,7 +102,6 @@ private:
 
   TTree* l1Tree;
   int run, lumi, event;
-  //ULong64_t event;
 
   double genPt_1, genEta_1, genPhi_1, genM_1, genDR;
   int genId, genMother;
@@ -300,30 +110,20 @@ private:
   double seedPt_1, seedEta_1, seedPhi_1;
   
   int l1NthJet_1;
-  int l1NTau_1;
   int recoNthJet_1;
   int seedNthJet_1;
 
-  double vbfBDT;
   double recoPt_;
-  std::vector<int> nSubJets, nBHadrons, HFlav, nL1Taus;
-  std::vector<string> regionEta, regionPhi;
-  std::vector<bool> hotTower;
+  std::vector<int> nSubJets, nBHadrons, HFlav;
   std::vector<std::vector<int>> subJetHFlav;
   std::vector<float> tau1, tau2, tau3;
 
-  std::vector<TLorentzVector> *allRegions  = new std::vector<TLorentzVector>;
-  std::vector<TLorentzVector> *allEcalTPGs  = new std::vector<TLorentzVector>;
-  std::vector<TLorentzVector> *allHcalTPGs  = new std::vector<TLorentzVector>;
-  std::vector<TLorentzVector> *caloClusters  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
 
-  int nGenJets, nRecoJets, nL1Jets;
-  int l1Matched_1;
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
   edm::Service<TFileService> tfs_;  
@@ -331,67 +131,14 @@ private:
 };
 
 BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
-  ecalTPSource(consumes<EcalTrigPrimDigiCollection>(iConfig.getParameter<edm::InputTag>("ecalToken"))),
-  ecalTPSourceLabel(iConfig.getParameter<edm::InputTag>("ecalToken").label()),
-  hcalTPSource(consumes<HcalTrigPrimDigiCollection>(iConfig.getParameter<edm::InputTag>("hcalToken"))),
-  hcalTPSourceLabel(iConfig.getParameter<edm::InputTag>("hcalToken").label()),
-  ePhiMap(72 * 2, 0),
-  hPhiMap(72 * 2, 0),
-  hfPhiMap(72 * 2, 0),
-  nPumBins(iConfig.getParameter<unsigned int>("nPumBins")),
-  pumLUT(nPumBins, std::vector< std::vector<uint32_t> >(2, std::vector<uint32_t>(13))),
-  useLSB(iConfig.getParameter<bool>("useLSB")),
-  useCalib(iConfig.getParameter<bool>("useCalib")),
-  useECALLUT(iConfig.getParameter<bool>("useECALLUT")),
-  useHCALLUT(iConfig.getParameter<bool>("useHCALLUT")),
-  useHFLUT(iConfig.getParameter<bool>("useHFLUT")),
-  caloScaleFactor(iConfig.getParameter<double>("caloScaleFactor")),
-  jetSeed(iConfig.getParameter<unsigned int>("jetSeed")),
-  tauSeed(iConfig.getParameter<unsigned int>("tauSeed")),
-  tauIsolationFactor(iConfig.getParameter<double>("tauIsolationFactor")),
-  eGammaSeed(iConfig.getParameter<unsigned int>("eGammaSeed")),
-  eGammaIsolationFactor(iConfig.getParameter<double>("eGammaIsolationFactor")),
-  verbose(iConfig.getParameter<bool>("verbose")),
-  fwVersion(iConfig.getParameter<int>("firmwareVersion")),
   jetSrc_(    consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
-  activityFraction12(iConfig.getParameter<double>("activityFraction12")),
   stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
-  stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO")))
+  stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
+  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted","")))
 {
-  std::vector<double> pumLUTData;
-  char pumLUTString[10];
-  for(uint32_t pumBin = 0; pumBin < nPumBins; pumBin++) {
-    for(uint32_t side = 0; side < 2; side++) {
-      if(side == 0) sprintf(pumLUTString, "pumLUT%2.2dp", pumBin);
-      else sprintf(pumLUTString, "pumLUT%2.2dn", pumBin);
-      pumLUTData = iConfig.getParameter<std::vector < double > >(pumLUTString);
-      for(uint32_t iEta = 0; iEta < std::max((uint32_t) pumLUTData.size(), MaxUCTRegionsEta); iEta++) {
-	pumLUT[pumBin][side][iEta] = (uint32_t) round(pumLUTData[iEta] / caloScaleFactor);
-      }
-      if(pumLUTData.size() != (MaxUCTRegionsEta))
-	std::cerr << "PUM LUT Data size integrity check failed; Expected size = " << MaxUCTRegionsEta
-		  << "; Provided size = " << pumLUTData.size()
-		  << "; Will use what is provided :(" << std::endl;
-    }
-  }
-  layer1 = new UCTLayer1(fwVersion);
-  summaryCard = new UCTSummaryCard(layer1, &pumLUT, jetSeed, tauSeed, tauIsolationFactor, eGammaSeed, eGammaIsolationFactor);
-  vector<UCTCrate*> crates = layer1->getCrates();
-  for(uint32_t crt = 0; crt < crates.size(); crt++) {
-    vector<UCTCard*> cards = crates[crt]->getCards();
-    for(uint32_t crd = 0; crd < cards.size(); crd++) {
-      vector<UCTRegion*> regions = cards[crd]->getRegions();
-      for(uint32_t rgn = 0; rgn < regions.size(); rgn++) {
-	vector<UCTTower*> towers = regions[rgn]->getTowers();
-	for(uint32_t twr = 0; twr < towers.size(); twr++) {
-	  twrList.push_back(towers[twr]);
-	}
-      }
-    }
-  }
-  // Initialize the Trees
+  // Initialize the Tree
 
   recoPt_      = iConfig.getParameter<double>("recoPtCut");
   nEvents      = tfs_->make<TH1F>( "nEvents"  , "nEvents", 2,  0., 1. );
@@ -408,8 +155,6 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
 }
 
 BoostedJetStudies::~BoostedJetStudies() {
-  if(layer1 != 0) delete layer1;
-  if(summaryCard != 0) delete summaryCard;
 }
 
 //
@@ -432,19 +177,11 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<pat::Jet> goodJetsAK8;
   std::vector<l1t::Jet> seeds;
 
-  allRegions->clear();
-  allEcalTPGs->clear();
-  allHcalTPGs->clear();
-  caloClusters->clear();
   l1Jets->clear();
   seed180->clear();
   tauseed->clear();
   ak8Jets->clear();
   subJets->clear();
-  nL1Taus.clear();
-  regionEta.clear();
-  regionPhi.clear();
-  hotTower.clear();
   nSubJets.clear();
   nBHadrons.clear();
   subJetHFlav.clear();
@@ -474,219 +211,24 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     tauseed->push_back(temp);
   }
 
-  // Start Running Layer 1
-  edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
-  evt.getByToken(ecalTPSource, ecalTPs);
-  edm::Handle<HcalTrigPrimDigiCollection> hcalTPs;
-  evt.getByToken(hcalTPSource, hcalTPs);
-
-  std::unique_ptr<L1CaloRegionCollection> rgnCollection (new L1CaloRegionCollection);
-  std::unique_ptr<L1JetParticleCollection> bJetCands(new L1JetParticleCollection);
-
-  uint32_t expectedTotalET = 0;
-
-  if(!layer1->clearEvent()) {
-    std::cerr << "UCT: Failed to clear event" << std::endl;
-    exit(1);
-  }
-
-  for ( const auto& ecalTp : *ecalTPs ) {
-    int caloEta = ecalTp.id().ieta();
-    int caloPhi = ecalTp.id().iphi();
-    int et = ecalTp.compressedEt();
-    bool fgVeto = ecalTp.fineGrain();
-    if(et != 0) {
-      UCTTowerIndex t = UCTTowerIndex(caloEta, caloPhi);
-      if(!layer1->setECALData(t,fgVeto,et)) {
-	std::cerr << "UCT: Failed loading an ECAL tower" << std::endl;
-	return;
-      }
-      expectedTotalET += et;
-      float eta = getRecoEtaNew(caloEta);
-      float phi = getRecoPhiNew(caloPhi);
-      TLorentzVector temp;
-      temp.SetPtEtaPhiE(et,eta,phi,et);
-      allEcalTPGs->push_back(temp);
-    }
-  }
-
-  for ( const auto& hcalTp : *hcalTPs ) {
-    int caloEta = hcalTp.id().ieta();
-    uint32_t absCaloEta = abs(caloEta);
-    // Tower 29 is not used by Layer-1
-    if(absCaloEta == 29) {
-      continue;
-    }
-    // Prevent usage of HF TPs with Layer-1 emulator if HCAL TPs are old style
-    else if(hcalTp.id().version() == 0 && absCaloEta > 29) {
-      continue;
-    }
-    else if(absCaloEta <= 41) {
-      int caloPhi = hcalTp.id().iphi();
-      if(caloPhi <= 72) {
-	int et = hcalTp.SOI_compressedEt();
-	bool fg = hcalTp.SOI_fineGrain();
-	if(et != 0) {
-	  UCTTowerIndex t = UCTTowerIndex(caloEta, caloPhi);
-	  uint32_t featureBits = 0;
-	  if(fg) featureBits = 0x1F; // Set all five feature bits for the moment - they are not defined in HW / FW yet!
-	  if(!layer1->setHCALData(t, featureBits, et)) {
-	    std::cerr << "caloEta = " << caloEta << "; caloPhi =" << caloPhi << std::endl;
-	    std::cerr << "UCT: Failed loading an HCAL tower" << std::endl;
-	    return; 
-	  }
-	  expectedTotalET += et;
-          float eta = getRecoEtaNew(caloEta);
-          float phi = getRecoPhiNew(caloPhi);
-          TLorentzVector temp;
-          temp.SetPtEtaPhiE(et,eta,phi,et);
-          allHcalTPGs->push_back(temp);
-	}
-      }
-      else {
-	std::cerr << "Illegal Tower: caloEta = " << caloEta << "; caloPhi =" << caloPhi << std::endl;	
-      }
-    }
-    else {
-      std::cerr << "Illegal Tower: caloEta = " << caloEta << std::endl;
-    }
-  }
-
-  if(!layer1->process()) {
-    std::cerr << "UCT: Failed to process layer 1" << std::endl;
-    exit(1);
-  }
-
-  // Crude check if total ET is approximately OK!
-  // We can't expect exact match as there is region level saturation to 10-bits
-  // 1% is good enough
-  int diff = abs((int)layer1->et() - (int)expectedTotalET);
-  if(verbose && diff > 0.01 * expectedTotalET ) {
-    print();
-    std::cout << "Expected " 
-	      << std::showbase << std::internal << std::setfill('0') << std::setw(10) << std::hex
-	      << expectedTotalET << std::dec << std::endl;
-  }
-
-  UCTGeometry g;
-
-  vector<UCTCrate*> crates = layer1->getCrates();
-  for(uint32_t crt = 0; crt < crates.size(); crt++) {
-    vector<UCTCard*> cards = crates[crt]->getCards();
-    for(uint32_t crd = 0; crd < cards.size(); crd++) {
-      vector<UCTRegion*> regions = cards[crd]->getRegions();
-      for(uint32_t rgn = 0; rgn < regions.size(); rgn++) {
-	uint32_t rawData = regions[rgn]->rawData();
-	uint32_t regionData = rawData & 0x0000FFFF;
-	uint32_t crate = regions[rgn]->getCrate();
-	uint32_t card = regions[rgn]->getCard();
-	uint32_t region = regions[rgn]->getRegion();
-	bool negativeEta = regions[rgn]->isNegativeEta();
-	uint32_t rPhi = g.getUCTRegionPhiIndex(crate, card);
-	// We want to reuse L1CaloRegion and L1CaloRegionDetID
-	// We do not want to change those classes too much
-	// We want comparison to legacy for Barrel and Endcap to work transparently
-	// Noting that rEta is packed in 5 bits of L1CaloRegionDetID, we have a scheme!
-	// We store the Barrel and Endcap regions in the same location as done for RCT
-	// HF has changed in the upgrade, 6x2 HF regions instead of 4x2 in case of RCT
-	// Note that for upgrade region numbers range 0-6 for Barrel/Endcap and 7-12 for HF
-	// So, the scheme used for rEta for upgrade is:
-	// rEta= 0- 3 for -HF regions 7-10
-	// rEta= 4-10 for -B/E regions 0-6
-	// rEta=11-17 for +B/E regions 0-6
-	// rEta=18-23 for +HF regions 7-12
-	// rEta=30 for -HF region 11
-	// rEta=31 for -HF region 12
-	uint32_t rEta = 10 - region;
-	if(negativeEta && region == 11) rEta = 30;
-	if(negativeEta && region == 12) rEta = 31;
-	if(!negativeEta) rEta = 11 + region; // Positive eta portion is offset by 11
-	rgnCollection->push_back(L1CaloRegion((uint16_t) regionData, (unsigned) rEta, (unsigned) rPhi, (int16_t) 0));   
-      }
-    }
-  }  
-
-  for(vector<L1CaloRegion>::const_iterator testRegion = rgnCollection->begin(); testRegion != rgnCollection->end(); ++testRegion){
-    uint16_t test_raw = testRegion->raw();
-    uint32_t test_et = testRegion->et();
-    uint32_t test_rEta = testRegion->id().ieta();
-    uint32_t test_rPhi = testRegion->id().iphi();
-    UCTRegionIndex test_rIndex = g.getUCTRegionIndexFromL1CaloRegion(test_rEta, test_rPhi);
-    UCTTowerIndex test_tIndex = g.getUCTTowerIndexFromL1CaloRegion(test_rIndex, test_raw);
-    int test_cEta = test_tIndex.first;
-    int test_cPhi = test_tIndex.second;
-    bool test_negativeEta = g.getNegativeSide(test_cEta);
-
-    if(testRegion->et()>0 && fabs(test_cEta)<28 && test_cPhi < 72){
-      float pt = test_et;
-      float eta = 0;
-      if(fabs(test_cEta)<28){
-        eta = getRecoEtaNew(test_cEta);
-      }
-      float phi = getRecoPhiNew(test_cPhi);
-      TLorentzVector temp ;
-      temp.SetPtEtaPhiE(pt,eta,phi,pt);
-      allRegions->push_back(temp);
-    }
-  }
-
-  if(!summaryCard->process()) {
-    std::cerr << "UCT: Failed to process summary card" << std::endl;
-    exit(1);      
-  }
-
-  double pt = 0;
-  double eta = -999.;
-  double phi = -999.;
-  double mass = 0;
-  double caloScaleFactor = 0.5;
-  std::list<UCTObject*> boostedJetObjs = summaryCard->getBoostedJetObjs();
-  for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
-    const UCTObject* object = *i;
-    pt = ((double) object->et()) * caloScaleFactor;
-    eta = g.getUCTTowerEta(object->iEta());
-    phi = g.getUCTTowerPhi(object->iPhi());
+  // Accessing L1boosted collection
+  edm::Handle<vector<l1extra::L1JetParticle>> l1Boosted;
+  if(!evt.getByToken(l1BoostedToken_, l1Boosted)) cout<<"ERROR GETTING THE L1BOOSTED JETS"<<std::endl;
+  evt.getByToken(l1BoostedToken_, l1Boosted);
+  const vector<l1extra::L1JetParticle> &l1B = *l1Boosted;
+  for(auto obj : l1B) {
     TLorentzVector temp;
-    temp.SetPtEtaPhiE(pt,eta,phi,pt);
+    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
     l1Jets->push_back(temp);
-    bJetCands->push_back(L1JetParticle(math::PtEtaPhiMLorentzVector(pt, eta, phi, mass), L1JetParticle::kCentral));//using kCentral for now, need a new type
-
-    int nActiveRegion = 0;
-    for(int i = 0; i < 9; i++){
-      if(object->boostedJetRegionET()[i] > object->et()*16*activityFraction12) nActiveRegion++;
-    }
-    nL1Taus.push_back(nActiveRegion); 
-    bitset<3> activeRegionEtaPattern = 0;
-    for(uint32_t iEta = 0; iEta < 3; iEta++){
-      bool activeStrip = false;
-      for(uint32_t iPhi = 0; iPhi < 3; iPhi++){
-        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12) activeStrip = true;
-      }
-      if(activeStrip) activeRegionEtaPattern |= (0x1 << iEta);
-    }
-    bitset<3> activeRegionPhiPattern = 0;
-    for(uint32_t iPhi = 0; iPhi < 3; iPhi++){
-      bool activeStrip = false;
-      for(uint32_t iEta = 0; iEta < 3; iEta++){
-        if(object->boostedJetRegionET()[3*iEta+iPhi] > 30 && object->boostedJetRegionET()[3*iEta+iPhi] > object->et()*16*activityFraction12) activeStrip = true;
-      }
-      if(activeStrip) activeRegionPhiPattern |= (0x1 << iPhi);
-    }
-    regionEta.push_back(activeRegionEtaPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
-    regionPhi.push_back(activeRegionPhiPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
   }
-
-  // Finish Running Layer 1
 
   // Start Runing Analysis
-
   Handle<vector<pat::Jet> > jets;
-  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Taus
+  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
     for (const pat::Jet &jet : *jets) {
       recoJet_pt->Fill( jet.pt() );
       recoJet_eta->Fill( jet.eta() );
       recoJet_phi->Fill( jet.phi() );
-      //get rid of the low pt stuff for analysis to save disk space
       if(jet.pt() > recoPt_ ) {
 	goodJets.push_back(jet);
       }
@@ -697,7 +239,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
   Handle<vector<pat::Jet> > jetsAK8;
 
-  if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting Reco Jets
+  if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
     for (const pat::Jet &jetAK8 : *jetsAK8) {
       if(jetAK8.pt() > recoPt_ ) {
         nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
@@ -735,17 +277,10 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
     //Match to boosted jets and see if we can match subjettiness functions...
     vector<l1extra::L1JetParticle> l1JetsSorted;
-    for( vector<l1extra::L1JetParticle>::const_iterator l1Jet = bJetCands->begin(); l1Jet != bJetCands->end(); l1Jet++ ){
+    for( vector<l1extra::L1JetParticle>::const_iterator l1Jet = l1Boosted->begin(); l1Jet != l1Boosted->end(); l1Jet++ ){
       l1JetsSorted.push_back(*l1Jet);
     }
     if(l1JetsSorted.size() > 1){  std::sort(l1JetsSorted.begin(),l1JetsSorted.end(),compareByPt);}
-    //create mapping between the sorted and unsorted collections
-    int m[l1JetsSorted.size()]; 
-    for (size_t i = 0; i < l1JetsSorted.size(); i++){ 
-      for (size_t j = 0; j < bJetCands->size(); j++){
-        if(l1JetsSorted.at(i).pt() == bJetCands->at(j).pt() && l1JetsSorted.at(i).eta() == bJetCands->at(j).eta() && l1JetsSorted.at(i).phi() == bJetCands->at(j).phi()) m[i] = j;
-      }
-    }
 
     pat::Jet recoJet_1;
 
@@ -765,8 +300,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
           l1Eta_1 = jet.eta();
           l1Phi_1 = jet.phi();
           l1NthJet_1 = i;
-          l1NTau_1 = nL1Taus[m[i]];
-          l1Matched_1 = m[i];
           foundL1Jet_1 = 1;
         }
         i++;
@@ -811,45 +344,14 @@ void BoostedJetStudies::zeroOutAllVariables(){
   genPt_1=-99; genEta_1=-99; genPhi_1=-99; genM_1=-99; genDR=99; genId=-99; genMother=-99;
   seedPt_1=-99; seedEta_1=-99; seedPhi_1=-99; seedNthJet_1=-99;
   recoPt_1=-99; recoEta_1=-99; recoPhi_1=-99; recoNthJet_1=-99;
-  l1Pt_1=-99; l1Eta_1=-99; l1Phi_1=-99; l1NthJet_1=-99; l1NTau_1=-99;
-  vbfBDT=-99; recoPt_=-99;
-  nGenJets=-99; nRecoJets=-99; nL1Jets=-99;
-  l1Matched_1=-99;
+  l1Pt_1=-99; l1Eta_1=-99; l1Phi_1=-99; l1NthJet_1=-99;
+  recoPt_=-99;
 }
-
-void BoostedJetStudies::print() {
-  vector<UCTCrate*> crates = layer1->getCrates();
-  for(uint32_t crt = 0; crt < crates.size(); crt++) {
-    vector<UCTCard*> cards = crates[crt]->getCards();
-    for(uint32_t crd = 0; crd < cards.size(); crd++) {
-      vector<UCTRegion*> regions = cards[crd]->getRegions();
-      for(uint32_t rgn = 0; rgn < regions.size(); rgn++) {
-	if(regions[rgn]->et() > 10) {
-	  int hitEta = regions[rgn]->hitCaloEta();
-	  int hitPhi = regions[rgn]->hitCaloPhi();
-	  vector<UCTTower*> towers = regions[rgn]->getTowers();
-	  for(uint32_t twr = 0; twr < towers.size(); twr++) {
-	    if(towers[twr]->caloPhi() == hitPhi && towers[twr]->caloEta() == hitEta) {
-	      std::cout << "*";
-	    }
-	    if(towers[twr]->et() > 10) std::cout << *towers[twr];
-	  }
-	  std::cout << *regions[rgn];
-	}
-      }
-      std::cout << *cards[crd];
-    }
-    std::cout << *crates[crt];
-  }
-  std::cout << *layer1;
-}
-
 
 void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("run",     &run,     "run/I");
     tree->Branch("lumi",    &lumi,    "lumi/I");
     tree->Branch("event",   &event,   "event/I");
-
     tree->Branch("genPt_1",       &genPt_1,     "genPt_1/D");
     tree->Branch("genEta_1",      &genEta_1,    "genEta_1/D");
     tree->Branch("genPhi_1",      &genPhi_1,    "genPhi_1/D");
@@ -857,43 +359,24 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("genDR",         &genDR,       "genDR/D");
     tree->Branch("genId",         &genId,       "genId/I");
     tree->Branch("genMother",     &genMother,   "genMother/I");
-
     tree->Branch("seedPt_1",      &seedPt_1,     "seedPt_1/D");
     tree->Branch("seedEta_1",     &seedEta_1,    "seedEta_1/D");
     tree->Branch("seedPhi_1",     &seedPhi_1,    "seedPhi_1/D");
     tree->Branch("seedNthJet_1",  &seedNthJet_1, "seedNthJet_1/I");
-
     tree->Branch("recoPt_1",      &recoPt_1,     "recoPt_1/D");
     tree->Branch("recoEta_1",     &recoEta_1,    "recoEta_1/D");
     tree->Branch("recoPhi_1",     &recoPhi_1,    "recoPhi_1/D");
     tree->Branch("recoNthJet_1",  &recoNthJet_1, "recoNthJet_1/I");
-      
     tree->Branch("l1Pt_1",        &l1Pt_1,       "l1Pt_1/D"); 
     tree->Branch("l1Eta_1",       &l1Eta_1,      "l1Eta_1/D");
     tree->Branch("l1Phi_1",       &l1Phi_1,      "l1Phi_1/D");
     tree->Branch("l1NthJet_1",    &l1NthJet_1,   "l1NthJet_1/I");
-    tree->Branch("l1NTau_1",      &l1NTau_1,     "l1NTau_1/I");
-
-    tree->Branch("l1Matched_1",   &l1Matched_1, "l1Matched_1/I");
-    tree->Branch("nRecoJets",     &nRecoJets,    "nRecoJets/I");
-    tree->Branch("nL1Jets",       &nL1Jets,      "nL1Jets/I");
-    tree->Branch("vbfBDT",        &vbfBDT,       "vbfBDT/D");
-
     tree->Branch("tau1",          &tau1);
     tree->Branch("tau2",          &tau2);
     tree->Branch("tau3",          &tau3);
     tree->Branch("nSubJets",      &nSubJets);
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
-    tree->Branch("nL1Taus",       &nL1Taus);
-    tree->Branch("regionEta",       &regionEta);
-    tree->Branch("regionPhi",       &regionPhi);
-    tree->Branch("hotTower",        &hotTower);
-
-    tree->Branch("allRegions", "vector<TLorentzVector>", &allRegions, 32000, 0);
-    tree->Branch("hcalTPGs", "vector<TLorentzVector>", &allHcalTPGs, 32000, 0);
-    tree->Branch("ecalTPGs", "vector<TLorentzVector>", &allEcalTPGs, 32000, 0);
-    tree->Branch("caloClusters", "vector<TLorentzVector>", &caloClusters, 32000, 0);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
@@ -917,39 +400,6 @@ BoostedJetStudies::endJob() {
 
 void
 BoostedJetStudies::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
-  if (!L1TCaloLayer1FetchLUTs(iSetup,
-                              ecalLUT,
-                              hcalLUT,
-                              hfLUT,
-                              ePhiMap,
-                              hPhiMap,
-                              hfPhiMap,
-                              useLSB,
-                              useCalib,
-                              useECALLUT,
-                              useHCALLUT,
-                              useHFLUT,
-                              fwVersion)) {
-    LOG_ERROR << "L1TCaloLayer1::beginRun: failed to fetch LUTS - using unity" << std::endl;
-    std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> eCalLayer1EtaSideEtArray;
-    std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> hCalLayer1EtaSideEtArray;
-    std::array<std::array<uint32_t, nEtBins>, nHfEtaBins> hfLayer1EtaEtArray;
-    ecalLUT.push_back(eCalLayer1EtaSideEtArray);
-    hcalLUT.push_back(hCalLayer1EtaSideEtArray);
-    hfLUT.push_back(hfLayer1EtaEtArray);
-  }
-  for (uint32_t twr = 0; twr < twrList.size(); twr++) {
-    int iphi = twrList[twr]->caloPhi();
-    int ieta = twrList[twr]->caloEta();
-    if (ieta < 0) {
-      iphi -= 1;
-    } else {
-      iphi += 71;
-    }
-    twrList[twr]->setECALLUT(&ecalLUT[ePhiMap[iphi]]);
-    twrList[twr]->setHCALLUT(&hcalLUT[hPhiMap[iphi]]);
-    twrList[twr]->setHFLUT(&hfLUT[hfPhiMap[iphi]]);
-  }
 }
  
 // ------------ method called when ending the processing of a run  ------------
