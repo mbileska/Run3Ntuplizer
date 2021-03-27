@@ -1,12 +1,9 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-#process = cms.Process("L1TCaloSummaryTest")
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
 
 process = cms.Process('RAW2DIGI',Run2_2018)
-
-#import EventFilter.L1TXRawToDigi.util as util
 
 from FWCore.ParameterSet.VarParsing import VarParsing
 
@@ -25,17 +22,6 @@ def formatLumis(lumistring, run) :
     return ['-'.join(l) for l in runlumis]
 
 print 'Getting files for run %d...' % options.runNumber
-#if len(options.inputFiles) is 0 and options.inputFileList is '' :
-#    inputFiles = util.getFilesForRun(options.runNumber, options.dataStream)
-#elif len(options.inputFileList) > 0 :
-#    with open(options.inputFileList) as f :
-#        inputFiles = list((line.strip() for line in f))
-#else :
-#    inputFiles = cms.untracked.vstring(options.inputFiles)
-#if len(inputFiles) is 0 :
-#    raise Exception('No files found for dataset %s run %d' % (options.dataStream, options.runNumber))
-#print 'Ok, time to analyze'
-
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -53,13 +39,6 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '112X_dataRun2_v7', '')
 process.hcalDigis.saveQIE10DataNSamples = cms.untracked.vint32( 10)
 process.hcalDigis.saveQIE10DataTags = cms.untracked.vstring( "MYDATA" )
 
-# To get L1 CaloParams
-#process.load('L1Trigger.L1TCalorimeter.caloStage2Params_cfi')
-# To get CaloTPGTranscoder
-#process.load('SimCalorimetry.HcalTrigPrimProducers.hcaltpdigi_cff')
-#process.HcalTPGCoderULUT.LUTGenerationMode = cms.bool(False)
-
-#process.load('L1Trigger.Configuration.SimL1Emulator_cff')
 process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
@@ -67,24 +46,6 @@ process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
-
-#process.l1NtupleProducer.isData = cms.bool(False)
-process.l1NtupleProducer.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
-process.l1NtupleProducer.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
-process.l1NtupleProducer.useECALLUT = cms.bool(False)
-process.l1NtupleProducer.useHCALLUT = cms.bool(False)
-process.l1NtupleProducer.useHFLUT   = cms.bool(False)
-process.l1NtupleProducer.useLSB     = cms.bool(True)
-process.l1NtupleProducer.verbose    = cms.bool(False)
-process.l1NtupleProducer.activityFraction12 = cms.double(0.00390625)
-
-process.uct2016EmulatorDigis.useECALLUT = cms.bool(False)
-process.uct2016EmulatorDigis.useHCALLUT = cms.bool(False)
-process.uct2016EmulatorDigis.useHFLUT = cms.bool(False)
-process.uct2016EmulatorDigis.useLSB = cms.bool(True)
-process.uct2016EmulatorDigis.verbose = cms.bool(False)
-process.uct2016EmulatorDigis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
-process.uct2016EmulatorDigis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
@@ -150,9 +111,6 @@ process.e = cms.EndPath(process.out)
 #process.schedule = cms.Schedule(process.p,process.e)
 process.schedule = cms.Schedule(process.p)
 
-#from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
-#associatePatAlgosToolsTask(process)
-
 # Automatic addition of the customisation function from L1Trigger.Configuration.customiseSettings
 from L1Trigger.Configuration.customiseSettings import L1TSettingsToCaloParams_2018_v1_3
 
@@ -163,6 +121,7 @@ process = L1TSettingsToCaloParams_2018_v1_3(process)
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
 
+# Multi-threading
 process.options.numberOfThreads=cms.untracked.uint32(4)
 process.options.numberOfStreams=cms.untracked.uint32(0)
 
