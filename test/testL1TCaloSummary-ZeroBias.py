@@ -1,9 +1,7 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
-
-process = cms.Process('RAW2DIGI',Run2_2018)
+process = cms.Process("L1TCaloSummaryTest")
 
 from FWCore.ParameterSet.VarParsing import VarParsing
 
@@ -35,9 +33,6 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '112X_dataRun2_v7', '')
-
-process.hcalDigis.saveQIE10DataNSamples = cms.untracked.vint32( 10)
-process.hcalDigis.saveQIE10DataTags = cms.untracked.vstring( "MYDATA" )
 
 process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
@@ -110,12 +105,6 @@ process.e = cms.EndPath(process.out)
 
 #process.schedule = cms.Schedule(process.p,process.e)
 process.schedule = cms.Schedule(process.p)
-
-# Automatic addition of the customisation function from L1Trigger.Configuration.customiseSettings
-from L1Trigger.Configuration.customiseSettings import L1TSettingsToCaloParams_2018_v1_3
-
-#call to customisation function L1TSettingsToCaloParams_2018_v1_3 imported from L1Trigger.Configuration.customiseSettings
-process = L1TSettingsToCaloParams_2018_v1_3(process)
 
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
