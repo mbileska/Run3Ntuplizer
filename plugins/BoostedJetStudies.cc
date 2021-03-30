@@ -325,7 +325,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   edm::Handle<reco::GenParticleCollection> genParticles;
   if(evt.getByToken(genSrc_, genParticles)){//Begin Getting Gen Particles
     for (reco::GenParticleCollection::const_iterator genparticle = genParticles->begin(); genparticle != genParticles->end(); genparticle++){
-      double DR = reco::deltaR(l1Eta_1, l1Phi_1, genparticle->eta(), genparticle->phi());
+      double DR = reco::deltaR(recoEta_1, recoPhi_1, genparticle->eta(), genparticle->phi());
       if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
         genDR = DR;
         genId = genparticle->pdgId();
