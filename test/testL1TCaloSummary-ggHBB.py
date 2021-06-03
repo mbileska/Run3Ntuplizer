@@ -39,13 +39,13 @@ process.load('L1Trigger.Configuration.SimL1Emulator_cff')
 process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
+process.load('L1Trigger.L1TCaloLayer1.simCaloStage2Layer1Digis_cfi')
 
 process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
 				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
@@ -84,7 +84,7 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ggHBB.root")
 )
 
-process.p = cms.Path(process.l1tCaloLayer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
+process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
 
 process.e = cms.EndPath(process.out)
 
