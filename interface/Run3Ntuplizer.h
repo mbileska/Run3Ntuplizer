@@ -150,7 +150,6 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   bool verbose_;
   std::ofstream logFile_;
   edm::InputTag rctSource_; 
-  edm::InputTag genSrc_;
 
   edm::EDGetTokenT<vector<pat::PackedCandidate> > pfCandsToken_;  
   edm::EDGetTokenT<L1CaloRegionCollection> L1RegionCollection;
@@ -163,6 +162,7 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
   edm::EDGetTokenT<vector<pat::Tau> > tauSrc_;
+  edm::EDGetTokenT<std::vector<reco::GenParticle> > genSrc_;
   edm::EDGetTokenT<vector <L1CaloRegion> > regionSource_;
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > stage2TauSrc_;
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > stage2IsoTauSrc_;
@@ -171,7 +171,6 @@ class Run3Ntuplizer : public edm::EDAnalyzer {
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > centralJets_;
   edm::EDGetTokenT<vector <l1extra::L1JetParticle> > forwardJets_;
   edm::EDGetTokenT<vector <reco::GenJet> > genJets_;
-  edm::EDGetTokenT<std::vector<reco::GenParticle> > genToken_;
 
   std::string folderName_;
 

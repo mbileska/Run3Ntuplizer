@@ -40,8 +40,8 @@ Run3Ntuplizer::Run3Ntuplizer( const ParameterSet & cfg ) :
   hcalSrc_(  consumes<HcalTrigPrimDigiCollection>(cfg.getParameter<edm::InputTag>("hcalDigis"))),
   jetSrc_(    consumes<vector<pat::Jet> >(cfg.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(cfg.getParameter<edm::InputTag>("recoJetsAK8"))),
-  tauSrc_(   consumes< vector<pat::Tau>     >(cfg.getParameter<edm::InputTag>("miniTaus"))),
-  genSrc_ ((        cfg.getParameter<edm::InputTag>( "genParticles"))),
+  tauSrc_(   consumes< vector<pat::Tau> >(cfg.getParameter<edm::InputTag>("miniTaus"))),
+  genSrc_ (  consumes<std::vector<reco::GenParticle> >(cfg.getParameter<edm::InputTag>( "genParticles"))),
   regionSource_(consumes<vector <L1CaloRegion> >(cfg.getParameter<edm::InputTag>("UCTRegion"))),
   stage2TauSrc_(    consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("stage2Taus" ))),
   stage2IsoTauSrc_( consumes<vector<l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("stage2IsoTaus"))),
@@ -51,8 +51,6 @@ Run3Ntuplizer::Run3Ntuplizer( const ParameterSet & cfg ) :
   forwardJets_(     consumes<vector <l1extra::L1JetParticle> >(cfg.getParameter<edm::InputTag>("l1UCTForwardJets"))),
   genJets_(consumes<vector <reco::GenJet> >(cfg.getParameter<edm::InputTag>("genJets")))
   {
-    genToken_ =     consumes<std::vector<reco::GenParticle> >(genSrc_);
-
     folderName_          = cfg.getUntrackedParameter<std::string>("folderName");
     recoPt_              = cfg.getParameter<double>("recoPtCut");
     isData_              = cfg.getParameter<bool>("isData");
@@ -383,7 +381,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
   // Now for the Taus
   edm::Handle<GenParticleCollectionType> genParticleHandle;
   if(!isData_){
-    if(!evt.getByToken(genToken_,genParticleHandle))
+    if(!evt.getByToken(genSrc_,genParticleHandle))
       cout<<"No gen Particles Found "<<std::endl;
   }  
 
@@ -748,7 +746,7 @@ void Run3Ntuplizer::analyze( const Event& evt, const EventSetup& es )
        UCTTowerIndex test_tIndex = g.getUCTTowerIndexFromL1CaloRegion(test_rIndex, test_raw);
        int test_cEta = test_tIndex.first;
        int test_cPhi = test_tIndex.second;
-       bool test_negativeEta = g.getNegativeSide(test_cEta);
+       //bool test_negativeEta = g.getNegativeSide(test_cEta);
        //uint32_t test_crate = g.getCrate(test_cEta, test_cPhi);
        //uint32_t test_card = g.getCard(test_cEta, test_cPhi);
        //uint32_t test_region = g.getRegion(test_cEta, test_cPhi);
