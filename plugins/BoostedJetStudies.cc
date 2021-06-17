@@ -83,7 +83,7 @@ private:
   virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
   // ----------member data ---------------------------
-  edm::EDGetTokenT<vector<pat::Jet> > jetSrc_;
+  edm::EDGetTokenT<vector<reco::CaloJet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
   edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
 
@@ -92,15 +92,7 @@ private:
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
 
   TH1F* nEvents;
-  TH1F* recoJet_pt;
-  TH1F* recoJet_eta;
-  TH1F* recoJet_phi;
 
-  TH1F* recoJetAK8_pt;
-  TH1F* recoJetAK8_eta;
-  TH1F* recoJetAK8_phi;
-
-  TTree* l1Tree;
   int run, lumi, event;
 
   double genPt_1, genEta_1, genPhi_1, genM_1, genDR;
@@ -131,7 +123,7 @@ private:
 };
 
 BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
-  jetSrc_(    consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
+  jetSrc_(    consumes<vector<reco::CaloJet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
@@ -142,14 +134,6 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
 
   recoPt_      = iConfig.getParameter<double>("recoPtCut");
   nEvents      = tfs_->make<TH1F>( "nEvents"  , "nEvents", 2,  0., 1. );
-  recoJet_pt   = tfs_->make<TH1F>( "recoJet_pt" , "p_{t}", 300,  0., 300. );
-  recoJet_eta  = tfs_->make<TH1F>( "recoJet_eta"  , "eta", 100,  -3, 3. );
-  recoJet_phi  = tfs_->make<TH1F>( "recoJet_phi"  , "phi", 100,  -4, 4. );
-  
-  recoJetAK8_pt   = tfs_->make<TH1F>( "recoJetAK8_pt" , "p_{t}", 300,  0., 300. );
-  recoJetAK8_eta  = tfs_->make<TH1F>( "recoJetAK8_eta"  , "eta", 100,  -3, 3. );
-  recoJetAK8_phi  = tfs_->make<TH1F>( "recoJetAK8_phi"  , "phi", 100,  -4, 4. );
-
   efficiencyTree = tfs_->make<TTree>("efficiencyTree", "Gen Matched Jet Tree ");
   createBranches(efficiencyTree);
 }
@@ -173,7 +157,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   event = evt.id().event();
   Handle<L1CaloRegionCollection> regions;
    
-  std::vector<pat::Jet> goodJets;
+  std::vector<reco::CaloJet> goodJets;
   std::vector<pat::Jet> goodJetsAK8;
   std::vector<l1t::Jet> seeds;
 
@@ -223,19 +207,16 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   }
 
   // Start Runing Analysis
-  Handle<vector<pat::Jet> > jets;
+  Handle<vector<reco::CaloJet> > jets;
   if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
-    for (const pat::Jet &jet : *jets) {
-      recoJet_pt->Fill( jet.pt() );
-      recoJet_eta->Fill( jet.eta() );
-      recoJet_phi->Fill( jet.phi() );
+    for (const reco::CaloJet &jet : *jets) {
       if(jet.pt() > recoPt_ ) {
 	goodJets.push_back(jet);
       }
     }
   }
   else
-    cout<<"Error getting reco jets"<<std::endl;
+    cout<<"Error getting calo jets"<<std::endl;
 
   Handle<vector<pat::Jet> > jetsAK8;
 
@@ -315,6 +296,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
           seedEta_1 = seed.eta();
           seedPhi_1 = seed.phi();
           seedNthJet_1 = j;
+          foundSeed_1 = 1;
         }
         j++;
       }
