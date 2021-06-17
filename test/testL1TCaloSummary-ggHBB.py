@@ -70,12 +70,12 @@ process.configurationMetadata = cms.untracked.PSet(
 )
 
 
-process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string("l1TFullEvent.root"),
-    outputCommands = cms.untracked.vstring('keep *')
-    #outputCommands = cms.untracked.vstring('drop *') #'keep *_*_*_L1TCaloSummaryTest')
-    #outputCommands = cms.untracked.vstring('drop *', 'keep *_l1tCaloLayer1Digis_*_*, keep *_*_*_L1TCaloSummaryTest' )
-)
+#process.out = cms.OutputModule("PoolOutputModule",
+#    fileName = cms.untracked.string("l1TFullEvent.root"),
+#    outputCommands = cms.untracked.vstring('keep *')
+#    #outputCommands = cms.untracked.vstring('drop *') #'keep *_*_*_L1TCaloSummaryTest')
+#    #outputCommands = cms.untracked.vstring('drop *', 'keep *_l1tCaloLayer1Digis_*_*, keep *_*_*_L1TCaloSummaryTest' )
+#)
 
 
 #Output
@@ -84,19 +84,23 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ggHBB.root")
 )
 
+from JMEAnalysis.JetToolbox.jetToolbox_cff import jetToolbox
+jetToolbox( process, 'ca15', 'jetSequence', 'noOutput', PUMethod='CHS', addSoftDropSubjets=True)
+
 process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
 
-process.e = cms.EndPath(process.out)
+#process.e = cms.EndPath(process.out)
 
 #process.schedule = cms.Schedule(process.p,process.e)
-process.schedule = cms.Schedule(process.p)
+#process.schedule = cms.Schedule(process.p)
+process.options.allowUnscheduled = cms.untracked.bool(True)
 
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
 process = customiseEarlyDelete(process)
 
 # Multi-threading
-process.options.numberOfThreads=cms.untracked.uint32(4)
+process.options.numberOfThreads=cms.untracked.uint32(8)
 process.options.numberOfStreams=cms.untracked.uint32(0)
 
 # End adding early deletion
