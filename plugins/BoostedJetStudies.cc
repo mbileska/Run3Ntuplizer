@@ -52,6 +52,7 @@
 #include "DataFormats/L1Trigger/interface/BXVector.h"
 #include "DataFormats/L1Trigger/interface/Jet.h"
 #include "DataFormats/L1Trigger/interface/Tau.h"
+#include "DataFormats/L1Trigger/interface/EtSum.h"
 #include "DataFormats/L1Trigger/interface/Muon.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
@@ -87,13 +88,17 @@ private:
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
   edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
 
-  edm::EDGetTokenT<BXVector<l1t::Jet>> stage2JetToken_;
-  edm::EDGetTokenT<BXVector<l1t::Tau>> stage2TauToken_;
+  edm::EDGetTokenT<l1t::JetBxCollection> stage2JetToken_;
+  edm::EDGetTokenT<l1t::TauBxCollection> stage2TauToken_;
+  edm::EDGetTokenT<l1t::EtSumBxCollection> stage2EtSumToken_;
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
+  edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
+  edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
+  edm::EDGetTokenT<edm::TriggerResults> trgresultsToken_;
 
   TH1F* nEvents;
 
-  int run, lumi, event;
+  int run, lumi, event, nPV;
 
   double genPt_1, genEta_1, genPhi_1, genM_1, genDR;
   int genId, genMother;
@@ -113,8 +118,11 @@ private:
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *htseed = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
+
+  bool passL1SingleJet180, passL1HTT360;
 
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
@@ -126,9 +134,13 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   jetSrc_(    consumes<vector<reco::CaloJet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
-  stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
-  stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
-  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted","")))
+  stage2JetToken_(consumes<l1t::JetBxCollection>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
+  stage2TauToken_(consumes<l1t::TauBxCollection>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
+  stage2EtSumToken_(consumes<l1t::EtSumBxCollection>( edm::InputTag("caloStage2Digis","EtSum","RECO"))),
+  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted",""))),
+  vtxToken_(consumes<reco::VertexCollection>( edm::InputTag("offlineSlimmedPrimaryVertices"))),
+  trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger"))),
+  trgresultsToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT")))
 {
   // Initialize the Tree
 
@@ -155,7 +167,12 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   run = evt.id().run();
   lumi = evt.id().luminosityBlock();
   event = evt.id().event();
-  Handle<L1CaloRegionCollection> regions;
+
+  nPV = 0;
+  edm::Handle<reco::VertexCollection> vtxHandle;
+  if(!evt.getByToken(vtxToken_, vtxHandle)) cout<<"ERROR GETTING PRIMARY VERTICES"<<std::endl;
+  evt.getByToken(vtxToken_, vtxHandle);
+  nPV = vtxHandle->size();
    
   std::vector<reco::CaloJet> goodJets;
   std::vector<pat::Jet> goodJetsAK8;
@@ -164,6 +181,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   l1Jets->clear();
   seed180->clear();
   tauseed->clear();
+  htseed->clear();
   ak8Jets->clear();
   subJets->clear();
   nSubJets.clear();
@@ -173,26 +191,60 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau2.clear();
   tau3.clear();
 
-  // Accessing existing L1 seed stored in MINIAOD
-  edm::Handle<BXVector<l1t::Jet>> stage2Jets;
-  if(!evt.getByToken(stage2JetToken_, stage2Jets)) cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
-  evt.getByToken(stage2JetToken_, stage2Jets);
-  const BXVector<l1t::Jet> &s2j = *stage2Jets;
-  for(auto obj : s2j) {
-    seeds.push_back(obj);
-    TLorentzVector temp;
-    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
-    seed180->push_back(temp);
+  passL1SingleJet180 = false; passL1HTT360 = false;
+
+  edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjects;
+  if(!evt.getByToken(trigobjectsMINIAODToken_, triggerObjects)) cout<<"ERROR GETTING TRIGGER OBJECTS"<<std::endl;
+  evt.getByToken(trigobjectsMINIAODToken_, triggerObjects);
+
+  edm::Handle<edm::TriggerResults> trigResults;
+  if(!evt.getByToken(trgresultsToken_, trigResults)) cout<<"ERROR GETTING TRIGGER RESULTS"<<std::endl;
+  evt.getByToken(trgresultsToken_, trigResults);
+
+  const edm::TriggerNames &names = evt.triggerNames(*trigResults);
+  for (pat::TriggerObjectStandAlone obj : *triggerObjects) {
+    obj.unpackFilterLabels(evt,*trigResults);
+    obj.unpackPathNames(names);
+    for (unsigned h = 0; h < obj.filterLabels().size(); ++h){
+      string myfillabl=obj.filterLabels()[h];
+      if(myfillabl=="hltL1sSingleJet180") { passL1SingleJet180 = true; }
+      if(myfillabl=="hltL1sHTT380erIorHTT320er") { passL1HTT360 = true; }
+    }
   }
 
-  edm::Handle<BXVector<l1t::Tau>> stage2Taus;
+  // Accessing existing L1 seed stored in MINIAOD
+  edm::Handle<l1t::JetBxCollection> stage2Jets;
+  if(!evt.getByToken(stage2JetToken_, stage2Jets)) cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
+  evt.getByToken(stage2JetToken_, stage2Jets);
+  for (l1t::JetBxCollection::const_iterator obj = stage2Jets->begin(0); obj != stage2Jets->end(0); obj++) {
+        seeds.push_back(*obj);
+        TLorentzVector temp;
+        temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
+        seed180->push_back(temp);
+  }
+
+  edm::Handle<l1t::TauBxCollection> stage2Taus;
   if(!evt.getByToken(stage2TauToken_, stage2Taus)) cout<<"ERROR GETTING THE STAGE 2 TAUS"<<std::endl;
   evt.getByToken(stage2TauToken_, stage2Taus);
-  const BXVector<l1t::Tau> &s2t = *stage2Taus;
-  for(auto obj : s2t) {
-    TLorentzVector temp;
-    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
-    tauseed->push_back(temp);
+  for (l1t::TauBxCollection::const_iterator obj = stage2Taus->begin(0); obj != stage2Taus->end(0); obj++) {
+        TLorentzVector temp;
+        temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
+        tauseed->push_back(temp);
+  }
+
+  edm::Handle<l1t::EtSumBxCollection> stage2EtSum;
+  if(!evt.getByToken(stage2EtSumToken_, stage2EtSum)) cout<<"ERROR GETTING THE STAGE 2 ETSUM"<<std::endl;
+  evt.getByToken(stage2EtSumToken_, stage2EtSum);
+  for (int ibx = stage2EtSum->getFirstBX(); ibx <= stage2EtSum->getLastBX(); ++ibx) {
+    cout<<"ibx: "<<ibx<<endl;
+  }
+  for (l1t::EtSumBxCollection::const_iterator obj = stage2EtSum->begin(0); obj != stage2EtSum->end(0); obj++) {
+    if(obj->getType() == l1t::EtSum::kTotalHt){
+      cout<<"HT: "<<obj->getType()<<"\t"<<obj->pt()<<endl;
+      TLorentzVector temp;
+      temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
+      htseed->push_back(temp);
+    }
   }
 
   // Accessing L1boosted collection
@@ -202,7 +254,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   const vector<l1extra::L1JetParticle> &l1B = *l1Boosted;
   for(auto obj : l1B) {
     TLorentzVector temp;
-    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
+    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.et());
     l1Jets->push_back(temp);
   }
 
@@ -334,6 +386,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("run",     &run,     "run/I");
     tree->Branch("lumi",    &lumi,    "lumi/I");
     tree->Branch("event",   &event,   "event/I");
+    tree->Branch("nPV",     &nPV,     "nPV/I");
     tree->Branch("genPt_1",       &genPt_1,     "genPt_1/D");
     tree->Branch("genEta_1",      &genEta_1,    "genEta_1/D");
     tree->Branch("genPhi_1",      &genPhi_1,    "genPhi_1/D");
@@ -362,8 +415,11 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
+    tree->Branch("htseed", "vector<TLorentzVector>", &htseed, 32000, 0);
     tree->Branch("ak8Jets", "vector<TLorentzVector>", &ak8Jets, 32000, 0);
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
+    tree->Branch("passL1HTT360",  &passL1HTT360,  "passL1HTT360/B");
+    tree->Branch("passL1SingleJet180",  &passL1SingleJet180,  "passL1SingleJet180/B");
   }
 
 
