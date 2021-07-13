@@ -38,6 +38,10 @@ process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
 
+process.load('L1Trigger.L1TCaloLayer1.simCaloStage2Layer1Digis_cfi')
+process.simCaloStage2Layer1Digis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
+process.simCaloStage2Layer1Digis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
+
 process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
@@ -66,7 +70,6 @@ process.source = cms.Source("PoolSource",
 					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/E46E586C-1589-E811-ADE3-FA163EF3AACF.root',
 					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/EC057557-2389-E811-8205-02163E010C3C.root',
 					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/DC1A7C29-1389-E811-832B-FA163E98E77A.root')
-
 #                             fileNames = cms.untracked.vstring(sourceFileList),
 #                             secondaryFileNames = cms.untracked.vstring(secondaryFileList)
 )
@@ -100,7 +103,7 @@ process.TFileService = cms.Service(
 
 process.L1TRawToDigi_Stage2 = cms.Task(process.caloLayer1Digis, process.caloStage2Digis)
 process.RawToDigi_short = cms.Sequence(process.L1TRawToDigi_Stage2)
-process.p = cms.Path(process.RawToDigi_short*process.l1tCaloLayer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
+process.p = cms.Path(process.RawToDigi_short*process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
 process.e = cms.EndPath(process.out)
 
 #process.schedule = cms.Schedule(process.p,process.e)
@@ -111,7 +114,7 @@ from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEar
 process = customiseEarlyDelete(process)
 
 # Multi-threading
-process.options.numberOfThreads=cms.untracked.uint32(4)
+process.options.numberOfThreads=cms.untracked.uint32(8)
 process.options.numberOfStreams=cms.untracked.uint32(0)
 
 # End adding early deletion
