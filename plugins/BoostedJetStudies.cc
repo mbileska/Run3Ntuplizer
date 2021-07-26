@@ -64,6 +64,59 @@ using namespace std;
 
 bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i.pt()>j.pt()); };
 
+float getRecoEtaNew(int caloEta){
+  float eta = -999.;
+  static bool first = true;
+  static double twrEtaValues[42];
+  if(first) {
+    twrEtaValues[0] = 0;
+    for(unsigned int i = 0; i < 20; i++) {
+      twrEtaValues[i + 1] = 0.0436 + i * 0.0872;
+    }
+    twrEtaValues[21] = 1.785;
+    twrEtaValues[22] = 1.880;
+    twrEtaValues[23] = 1.9865;
+    twrEtaValues[24] = 2.1075;
+    twrEtaValues[25] = 2.247;
+    twrEtaValues[26] = 2.411;
+    twrEtaValues[27] = 2.575;
+    twrEtaValues[28] = 2.825;
+    twrEtaValues[29] = 999.;
+    twrEtaValues[30] = (3.15+2.98)/2.;
+    twrEtaValues[31] = (3.33+3.15)/2.;
+    twrEtaValues[32] = (3.50+3.33)/2.;
+    twrEtaValues[33] = (3.68+3.50)/2.;
+    twrEtaValues[34] = (3.68+3.85)/2.;
+    twrEtaValues[35] = (3.85+4.03)/2.;
+    twrEtaValues[36] = (4.03+4.20)/2.;
+    twrEtaValues[37] = (4.20+4.38)/2.;
+    twrEtaValues[38] = (4.74+4.38*3)/4.;
+    twrEtaValues[39] = (4.38+4.74*3)/4.;
+    twrEtaValues[40] = (5.21+4.74*3)/4.;
+    twrEtaValues[41] = (4.74+5.21*3)/4.;
+    first = false;
+  }
+  uint32_t absCaloEta = abs(caloEta);
+  if(absCaloEta <= 41) {
+    if(caloEta < 0)
+      eta =  -twrEtaValues[absCaloEta];
+    else
+      eta = +twrEtaValues[absCaloEta];
+  }
+  return eta;
+};
+
+float getRecoPhiNew(int caloPhi){
+  float phi = -999.;
+  if(caloPhi > 72) phi = +999.;
+  uint32_t absCaloPhi = std::abs(caloPhi) - 1;
+  if(absCaloPhi < 36)
+    phi = (((double) absCaloPhi + 0.5) * 0.0872);
+  else
+    phi = (-(71.5 - (double) absCaloPhi) * 0.0872);
+  return phi;
+};
+
 //
 // class declaration
 //
@@ -95,6 +148,8 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
   edm::EDGetTokenT<edm::TriggerResults> trgresultsToken_;
+  edm::EDGetTokenT<EcalTrigPrimDigiCollection> ecalTPToken_;
+  edm::EDGetTokenT<HcalTrigPrimDigiCollection> hcalTPToken_;
 
   TH1F* nEvents;
 
@@ -121,6 +176,8 @@ private:
   std::vector<TLorentzVector> *htseed = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *ecalTPGs  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *hcalTPGs  = new std::vector<TLorentzVector>;
 
   bool passL1SingleJet180, passL1HTT360;
 
@@ -140,7 +197,9 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted",""))),
   vtxToken_(consumes<reco::VertexCollection>( edm::InputTag("offlineSlimmedPrimaryVertices"))),
   trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger"))),
-  trgresultsToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT")))
+  trgresultsToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT"))),
+  ecalTPToken_(consumes<EcalTrigPrimDigiCollection>( edm::InputTag("l1tCaloLayer1Digis"))),
+  hcalTPToken_(consumes<HcalTrigPrimDigiCollection>( edm::InputTag("l1tCaloLayer1Digis")))
 {
   // Initialize the Tree
 
@@ -184,12 +243,61 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   htseed->clear();
   ak8Jets->clear();
   subJets->clear();
+  ecalTPGs->clear();
+  hcalTPGs->clear();
   nSubJets.clear();
   nBHadrons.clear();
   subJetHFlav.clear();
   tau1.clear();
   tau2.clear();
   tau3.clear();
+
+  edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
+  evt.getByToken(ecalTPToken_, ecalTPs);
+  for ( const auto& ecalTp : *ecalTPs ) {
+    int caloEta = ecalTp.id().ieta();
+    int caloPhi = ecalTp.id().iphi();
+    int et = ecalTp.compressedEt();
+    if(et != 0) {
+      float eta = getRecoEtaNew(caloEta);
+      float phi = getRecoPhiNew(caloPhi);
+      TLorentzVector temp;
+      temp.SetPtEtaPhiE(et,eta,phi,et);
+      ecalTPGs->push_back(temp);
+    }
+  }
+
+  edm::Handle<HcalTrigPrimDigiCollection> hcalTPs;
+  evt.getByToken(hcalTPToken_, hcalTPs);
+  for ( const auto& hcalTp : *hcalTPs ) {
+    int caloEta = hcalTp.id().ieta();
+    uint32_t absCaloEta = abs(caloEta);
+    if(absCaloEta == 29) {
+      continue;
+    }
+    else if(hcalTp.id().version() == 0 && absCaloEta > 29) {
+      continue;
+    }
+    else if(absCaloEta <= 41) {
+      int caloPhi = hcalTp.id().iphi();
+      if(caloPhi <= 72) {
+	int et = hcalTp.SOI_compressedEt();
+	if(et != 0) {
+          float eta = getRecoEtaNew(caloEta);
+          float phi = getRecoPhiNew(caloPhi);
+          TLorentzVector temp;
+          temp.SetPtEtaPhiE(et,eta,phi,et);
+          hcalTPGs->push_back(temp);
+	}
+      }
+      else {
+	std::cerr << "Illegal Tower: caloEta = " << caloEta << "; caloPhi =" << caloPhi << std::endl;
+      }
+    }
+    else {
+      std::cerr << "Illegal Tower: caloEta = " << caloEta << std::endl;
+    }
+  }
 
   passL1SingleJet180 = false; passL1HTT360 = false;
 
@@ -235,12 +343,8 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   edm::Handle<l1t::EtSumBxCollection> stage2EtSum;
   if(!evt.getByToken(stage2EtSumToken_, stage2EtSum)) cout<<"ERROR GETTING THE STAGE 2 ETSUM"<<std::endl;
   evt.getByToken(stage2EtSumToken_, stage2EtSum);
-  for (int ibx = stage2EtSum->getFirstBX(); ibx <= stage2EtSum->getLastBX(); ++ibx) {
-    cout<<"ibx: "<<ibx<<endl;
-  }
   for (l1t::EtSumBxCollection::const_iterator obj = stage2EtSum->begin(0); obj != stage2EtSum->end(0); obj++) {
     if(obj->getType() == l1t::EtSum::kTotalHt){
-      cout<<"HT: "<<obj->getType()<<"\t"<<obj->pt()<<endl;
       TLorentzVector temp;
       temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
       htseed->push_back(temp);
@@ -418,6 +522,8 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("htseed", "vector<TLorentzVector>", &htseed, 32000, 0);
     tree->Branch("ak8Jets", "vector<TLorentzVector>", &ak8Jets, 32000, 0);
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
+    tree->Branch("hcalTPGs", "vector<TLorentzVector>", &hcalTPGs, 32000, 0);
+    tree->Branch("ecalTPGs", "vector<TLorentzVector>", &ecalTPGs, 32000, 0);
     tree->Branch("passL1HTT360",  &passL1HTT360,  "passL1HTT360/B");
     tree->Branch("passL1SingleJet180",  &passL1SingleJet180,  "passL1SingleJet180/B");
   }
