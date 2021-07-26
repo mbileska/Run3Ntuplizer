@@ -98,7 +98,7 @@ from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEar
 process = customiseEarlyDelete(process)
 
 # Multi-threading
-process.options.numberOfThreads=cms.untracked.uint32(4)
+process.options.numberOfThreads=cms.untracked.uint32(8)
 process.options.numberOfStreams=cms.untracked.uint32(0)
 
 # End adding early deletion
