@@ -93,7 +93,7 @@ void plotVector(int iEvent){
   gStyle->SetOptStat(0);
   //const char* tfile = file;
   //TFile *f = TFile::Open(tfile,"READ");
-  TFile *f = TFile::Open("/afs/cern.ch/work/p/pdas/HT360.root","READ");
+  TFile *f = TFile::Open("/afs/cern.ch/work/p/pdas/Run3Ntuplizer/integration/CMSSW_11_2_0/src/L1Trigger/Run3Ntuplizer/test/l1TNtuple-ggHBB_test.root","READ");
   if (!f) { return; }
 
   TTree *t = (TTree*) f->Get("l1NtupleProducer/efficiencyTree");
@@ -220,9 +220,9 @@ void plotVector(int iEvent){
     double pt  = vL1Jets->at(j).Pt();
     h2L1Jets->Fill(eta, phi, pt);
 
-    if(pt*1.25>100){
+    if(pt>100.){
       std::ostringstream strs;
-      strs << int(pt*1.25); 
+      strs << int(pt); 
       std::string text = strs.str();
       eta += 0.1;
       phi += 0.1;
@@ -358,7 +358,7 @@ void plotVector(int iEvent){
   }
 
   char saveFile[100];
-  sprintf(saveFile,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/140721/HT360/Event-%u-test.png",event);
+  sprintf(saveFile,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/080821/Event-%u-test.png",event);
   c1->SaveAs(saveFile);
 
   if(x1 > -99.){
@@ -382,7 +382,7 @@ void plotVector(int iEvent){
     h2SubJets->Draw("SAME BOX");
     l->Draw();
     char saveFile1[100];
-    sprintf(saveFile1,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/140721/HT360/Event-%u-test-jet1.png",event);
+    sprintf(saveFile1,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/080821/Event-%u-test-jet1.png",event);
     c2->SaveAs(saveFile1);
   }
 
@@ -407,7 +407,7 @@ void plotVector(int iEvent){
     h2SubJets->Draw("SAME BOX");
     l->Draw();
     char saveFile1[100];
-    sprintf(saveFile1,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/140721/HT360/Event-%u-test-jet2.png",event);
+    sprintf(saveFile1,"/afs/cern.ch/work/p/pdas/www/Run3Ntuplizer/EventDisplays/080821/Event-%u-test-jet2.png",event);
     c3->SaveAs(saveFile1);
   }
 
