@@ -145,6 +145,7 @@ private:
   edm::EDGetTokenT<l1t::TauBxCollection> stage2TauToken_;
   edm::EDGetTokenT<l1t::EtSumBxCollection> stage2EtSumToken_;
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
+  edm::EDGetTokenT<vector<l1extra::L1JetParticle>> stage3Token_;
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
   edm::EDGetTokenT<edm::TriggerResults> trgresultsToken_;
@@ -171,6 +172,7 @@ private:
   std::vector<float> tau1, tau2, tau3;
 
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *stage3Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *htseed = new std::vector<TLorentzVector>;
@@ -195,6 +197,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   stage2TauToken_(consumes<l1t::TauBxCollection>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
   stage2EtSumToken_(consumes<l1t::EtSumBxCollection>( edm::InputTag("caloStage2Digis","EtSum","RECO"))),
   l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted",""))),
+  stage3Token_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Stage3",""))),
   vtxToken_(consumes<reco::VertexCollection>( edm::InputTag("offlineSlimmedPrimaryVertices"))),
   trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger"))),
   trgresultsToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT"))),
@@ -238,6 +241,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<l1t::Jet> seeds;
 
   l1Jets->clear();
+  stage3Jets->clear();
   seed180->clear();
   tauseed->clear();
   htseed->clear();
@@ -324,7 +328,12 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   edm::Handle<l1t::JetBxCollection> stage2Jets;
   if(!evt.getByToken(stage2JetToken_, stage2Jets)) cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
   evt.getByToken(stage2JetToken_, stage2Jets);
+  //const BXVector<l1t::Jet> &s2j = *stage2Jets;
+  //for(auto obj : s2j) {
+  //      cout<<"All BX: "<<obj.pt()<<"\t"<<obj.eta()<<"\t"<<obj.phi()<<endl;
+  //}
   for (l1t::JetBxCollection::const_iterator obj = stage2Jets->begin(0); obj != stage2Jets->end(0); obj++) {
+  //      cout<<"BX=0: "<<obj->pt()<<"\t"<<obj->eta()<<"\t"<<obj->phi()<<endl;
         seeds.push_back(*obj);
         TLorentzVector temp;
         temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
@@ -362,7 +371,18 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     l1Jets->push_back(temp);
   }
 
-  // Start Runing Analysis
+  // Accessing Stage-3 collection
+  edm::Handle<vector<l1extra::L1JetParticle>> stage3;
+  if(!evt.getByToken(stage3Token_, stage3)) cout<<"ERROR GETTING THE L1BOOSTED JETS"<<std::endl;
+  evt.getByToken(stage3Token_, stage3);
+  const vector<l1extra::L1JetParticle> &s3j = *stage3;
+  for(auto obj : s3j) {
+    TLorentzVector temp;
+    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.et());
+    stage3Jets->push_back(temp);
+  }
+
+  // Start Running Analysis
   Handle<vector<reco::CaloJet> > jets;
   if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
     for (const reco::CaloJet &jet : *jets) {
@@ -517,6 +537,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
+    tree->Branch("stage3Jets", "vector<TLorentzVector>", &stage3Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
     tree->Branch("htseed", "vector<TLorentzVector>", &htseed, 32000, 0);
