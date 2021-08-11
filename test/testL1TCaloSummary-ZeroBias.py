@@ -52,30 +52,10 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #secondaryFileList = open("inputFileList.txt","r")
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/257FD10B-6D35-7441-BA80-EC6F5205715A.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/45960F97-D686-9C48-9217-18B01B2C2171.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/51C2690F-6EE4-FB4A-9085-59E2EEDB915A.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/C8C9C76B-C6CD-3B41-A187-0F476F68A8F3.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/6541FFB6-9673-2641-9C1D-AAFE0CE36D1E.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/7A4F1CEA-9005-EB47-B4A0-2C9163205D6D.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/A92D9A3F-848E-8949-94AB-51FA607F3095.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/77E4AD09-EFC0-2D41-8A72-D9A58D7B8611.root',
-					'/store/data/Run2018C/ZeroBias/MINIAOD/17Sep2018-v1/120000/B3A2CADC-75F3-A242-9060-A290CDE14221.root'),
-    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/881D06AE-2D89-E811-B2AC-FA163E8F9107.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/14B165C7-2B89-E811-B118-FA163E31F8EA.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/70D101BD-2289-E811-BD8B-FA163E308A6C.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/70032A26-1989-E811-961F-FA163E354E33.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/62996682-2589-E811-A753-02163E017EC6.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/6868D96E-1489-E811-8480-FA163E50A19F.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/E46E586C-1589-E811-ADE3-FA163EF3AACF.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/EC057557-2389-E811-8205-02163E010C3C.root',
-					'/store/data/Run2018C/ZeroBias/RAW/v1/000/319/756/00000/DC1A7C29-1389-E811-832B-FA163E98E77A.root')
-#                             fileNames = cms.untracked.vstring(sourceFileList),
-#                             secondaryFileNames = cms.untracked.vstring(secondaryFileList)
+    fileNames = cms.untracked.vstring('/store/data/Run2018D/EphemeralZeroBias8/MINIAOD/PromptReco-v2/000/325/057/00000/954F1BEB-75FC-ED43-AA3A-6F032EF62093.root'),
+    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/EphemeralZeroBias8/RAW/v1/000/325/057/00000/2003CE91-DBBF-A34F-8880-B6B20DF0C349.root')
 )
-
-#process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("")
-#process.source.eventsToProcess = cms.untracked.VEventRange("319756:991181466","319756:928807791","319756:608032744","319756:309750363","319756:701995845","319756:181355847","319756:192667981","319756:192601340","319756:644859036","319756:110119890")
+#process.source.eventsToProcess = cms.untracked.VEventRange("325057:61751881")
 
 process.options = cms.untracked.PSet(
 
