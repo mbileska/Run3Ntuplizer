@@ -172,8 +172,8 @@ private:
   std::vector<int> nSubJets, nBHadrons, HFlav;
   std::vector<std::vector<int>> subJetHFlav;
   std::vector<float> tau1, tau2, tau3;
-  //std::vector<string> regionEta, regionPhi;
-  //std::vector<bool> centerIsTauLike, centerIsEGammaLike;   //// ONLY when using l1t-integration-test-07Jul branch with updated L1JetParticles
+  std::vector<string> regionEta, regionPhi;
+  std::vector<bool> centerIsTauLike, centerIsEGammaLike;
 
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *stage3Jets  = new std::vector<TLorentzVector>;
@@ -262,10 +262,10 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau1.clear();
   tau2.clear();
   tau3.clear();
-  //regionEta.clear();
-  //regionPhi.clear();
-  //centerIsTauLike.clear();
-  //centerIsEGammaLike.clear();
+  regionEta.clear();
+  regionPhi.clear();
+  centerIsTauLike.clear();
+  centerIsEGammaLike.clear();
 
   edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
   evt.getByToken(ecalTPToken_, ecalTPs);
@@ -384,10 +384,10 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     TLorentzVector temp;
     temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.et());
     l1Jets->push_back(temp);
-    //regionEta.push_back(obj.getRegionEta());
-    //regionPhi.push_back(obj.getRegionPhi());
-    //centerIsTauLike.push_back(obj.getCenterTauLike());
-    //centerIsEGammaLike.push_back(obj.getCenterEGammaLike());
+    regionEta.push_back(obj.getRegionEta());
+    regionPhi.push_back(obj.getRegionPhi());
+    centerIsTauLike.push_back(obj.getCenterTauLike());
+    centerIsEGammaLike.push_back(obj.getCenterEGammaLike());
   }
 
   // Accessing Stage-3 collection
@@ -555,10 +555,10 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("nSubJets",      &nSubJets);
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
-    //tree->Branch("regionEta",     &regionEta);
-    //tree->Branch("regionPhi",     &regionPhi);
-    //tree->Branch("centerIsTauLike", &centerIsTauLike);
-    //tree->Branch("centerIsEGammaLike", &centerIsEGammaLike);
+    tree->Branch("regionEta",     &regionEta);
+    tree->Branch("regionPhi",     &regionPhi);
+    tree->Branch("centerIsTauLike", &centerIsTauLike);
+    tree->Branch("centerIsEGammaLike", &centerIsEGammaLike);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
     tree->Branch("stage3Jets", "vector<TLorentzVector>", &stage3Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
