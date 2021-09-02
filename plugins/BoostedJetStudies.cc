@@ -147,7 +147,6 @@ private:
   edm::EDGetTokenT<l1t::TauBxCollection> stage2TauToken_;
   edm::EDGetTokenT<l1t::EtSumBxCollection> stage2EtSumToken_;
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
-  edm::EDGetTokenT<vector<l1extra::L1JetParticle>> stage3Token_;
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> trigobjectsMINIAODToken_;
   edm::EDGetTokenT<edm::TriggerResults> trgresultsToken_;
@@ -172,11 +171,8 @@ private:
   std::vector<int> nSubJets, nBHadrons, HFlav;
   std::vector<std::vector<int>> subJetHFlav;
   std::vector<float> tau1, tau2, tau3;
-  //std::vector<string> regionEta, regionPhi;
-  //std::vector<bool> centerIsTauLike, centerIsEGammaLike;   //// ONLY when using l1t-integration-test-07Jul branch with updated L1JetParticles
 
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
-  std::vector<TLorentzVector> *stage3Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *egseed = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
@@ -203,7 +199,6 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   stage2TauToken_(consumes<l1t::TauBxCollection>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
   stage2EtSumToken_(consumes<l1t::EtSumBxCollection>( edm::InputTag("caloStage2Digis","EtSum","RECO"))),
   l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted",""))),
-  stage3Token_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Stage3",""))),
   vtxToken_(consumes<reco::VertexCollection>( edm::InputTag("offlineSlimmedPrimaryVertices"))),
   trigobjectsMINIAODToken_(consumes<pat::TriggerObjectStandAloneCollection>( edm::InputTag("slimmedPatTrigger"))),
   trgresultsToken_(consumes<edm::TriggerResults>( edm::InputTag("TriggerResults::HLT"))),
@@ -247,7 +242,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<l1t::Jet> seeds;
 
   l1Jets->clear();
-  stage3Jets->clear();
   seed180->clear();
   egseed->clear();
   tauseed->clear();
@@ -262,10 +256,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau1.clear();
   tau2.clear();
   tau3.clear();
-  //regionEta.clear();
-  //regionPhi.clear();
-  //centerIsTauLike.clear();
-  //centerIsEGammaLike.clear();
 
   edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
   evt.getByToken(ecalTPToken_, ecalTPs);
@@ -384,21 +374,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     TLorentzVector temp;
     temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.et());
     l1Jets->push_back(temp);
-    //regionEta.push_back(obj.getRegionEta());
-    //regionPhi.push_back(obj.getRegionPhi());
-    //centerIsTauLike.push_back(obj.getCenterTauLike());
-    //centerIsEGammaLike.push_back(obj.getCenterEGammaLike());
-  }
-
-  // Accessing Stage-3 collection
-  edm::Handle<vector<l1extra::L1JetParticle>> stage3;
-  if(!evt.getByToken(stage3Token_, stage3)) cout<<"ERROR GETTING THE L1BOOSTED JETS"<<endl;
-  evt.getByToken(stage3Token_, stage3);
-  const vector<l1extra::L1JetParticle> &s3j = *stage3;
-  for(auto obj : s3j) {
-    TLorentzVector temp;
-    temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.et());
-    stage3Jets->push_back(temp);
   }
 
   // Start Running Analysis
@@ -555,12 +530,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("nSubJets",      &nSubJets);
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
-    //tree->Branch("regionEta",     &regionEta);
-    //tree->Branch("regionPhi",     &regionPhi);
-    //tree->Branch("centerIsTauLike", &centerIsTauLike);
-    //tree->Branch("centerIsEGammaLike", &centerIsEGammaLike);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
-    tree->Branch("stage3Jets", "vector<TLorentzVector>", &stage3Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("egseed", "vector<TLorentzVector>", &egseed, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
