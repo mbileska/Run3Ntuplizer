@@ -136,7 +136,6 @@ void L1TEventDisplayGenerator::analyze( const Event& evt, const EventSetup& es )
       UCTTowerIndex test_tIndex = g.getUCTTowerIndexFromL1CaloRegion(test_rIndex, test_raw);
       int test_cEta = test_tIndex.first;
       int test_cPhi = test_tIndex.second;
-      bool test_negativeEta = g.getNegativeSide(test_cEta);
 
       if(testRegion->et()>0 && fabs(test_cEta)<28 && test_cPhi < 72){
         float pt = test_et;

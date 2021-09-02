@@ -66,11 +66,6 @@
 #include "L1Trigger/L1TCaloLayer1/src/UCTGeometry.hh"
 
 
-//#ifdef __MAKECINT__
-#pragma extra_include "TLorentzVector.h";
-#pragma link C++ class std::vector<TLorentzVector>;
-	 //#endif
-
 //
 // class declaration
 //

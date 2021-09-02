@@ -178,12 +178,6 @@ void L1TRegionNtupleProducer::analyze( const Event& evt, const EventSetup& es )
        UCTTowerIndex test_tIndex = g.getUCTTowerIndexFromL1CaloRegion(test_rIndex, test_raw);
        int test_cEta = test_tIndex.first;
        int test_cPhi = test_tIndex.second;
-       bool test_negativeEta = g.getNegativeSide(test_cEta);
-       uint32_t test_crate = g.getCrate(test_cEta, test_cPhi);
-       uint32_t test_card = g.getCard(test_cEta, test_cPhi);
-       uint32_t test_region = g.getRegion(test_cEta, test_cPhi);
-       uint32_t test_iEta = g.getiEta(test_cEta);
-       uint32_t test_iPhi = g.getiPhi(test_cPhi);
 
        if(testRegion->et()>0 && fabs(test_cEta)<28 && test_cPhi < 72){
 	 float pt = test_et;
