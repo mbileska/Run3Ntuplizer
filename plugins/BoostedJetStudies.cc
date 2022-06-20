@@ -48,6 +48,7 @@
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/Tau.h"
+#include "DataFormats/PatCandidates/interface/MET.h"
 
 #include "DataFormats/L1Trigger/interface/BXVector.h"
 #include "DataFormats/L1Trigger/interface/Jet.h"
@@ -141,6 +142,7 @@ private:
   edm::EDGetTokenT<vector<reco::CaloJet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
   edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
+  edm::EDGetTokenT<edm::View<pat::MET>> METSrc_;
 
   edm::EDGetTokenT<l1t::JetBxCollection> stage2JetToken_;
   edm::EDGetTokenT<l1t::EGammaBxCollection> stage2EGToken_;
@@ -157,11 +159,12 @@ private:
 
   int run, lumi, event, nPV;
 
-  double genPt_1, genEta_1, genPhi_1, genM_1, genDR;
+  double genPt_1, genEta_1, genPhi_1, genM_1, genDR, genDR_Hbb, Higgs_pt, Higgs_eta, Z_pt, Z_eta;
   int genId, genMother;
   double recoPt_1, recoEta_1, recoPhi_1;
   double l1Pt_1, l1Eta_1, l1Phi_1;
   double seedPt_1, seedEta_1, seedPhi_1;
+  double recoMET;
   
   int l1NthJet_1;
   int recoNthJet_1;
@@ -177,6 +180,7 @@ private:
   std::vector<TLorentzVector> *egseed = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *htseed = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *mhthfseed = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ak8Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *subJets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *ecalTPGs  = new std::vector<TLorentzVector>;
@@ -193,7 +197,8 @@ private:
 BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   jetSrc_(    consumes<vector<reco::CaloJet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
-  genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
+  genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>("genParticles"))),
+  METSrc_(    consumes<edm::View<pat::MET>> (iConfig.getParameter<edm::InputTag>("recoMETs"))),
   stage2JetToken_(consumes<l1t::JetBxCollection>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
   stage2EGToken_(consumes<l1t::EGammaBxCollection>( edm::InputTag("caloStage2Digis","EGamma","RECO"))),
   stage2TauToken_(consumes<l1t::TauBxCollection>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
@@ -246,6 +251,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   egseed->clear();
   tauseed->clear();
   htseed->clear();
+  mhthfseed->clear();
   ak8Jets->clear();
   subJets->clear();
   ecalTPGs->clear();
@@ -363,6 +369,11 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
       temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
       htseed->push_back(temp);
     }
+    if(obj->getType() == l1t::EtSum::kMissingHtHF){
+      TLorentzVector temp;
+      temp.SetPtEtaPhiE(obj->pt(), obj->eta(), obj->phi(), obj->et());
+      mhthfseed->push_back(temp);
+    }
   }
 
   // Accessing L1boosted collection
@@ -377,6 +388,36 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   }
 
   // Start Running Analysis
+  zeroOutAllVariables();
+
+  edm::Handle<reco::GenParticleCollection> genParticles;
+  if(evt.getByToken(genSrc_, genParticles)){//Begin Getting Gen Particles
+    for (reco::GenParticleCollection::const_iterator genparticle = genParticles->begin(); genparticle != genParticles->end(); genparticle++){
+      //double DR = reco::deltaR(recoEta_1, recoPhi_1, genparticle->eta(), genparticle->phi());
+      //if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
+      //  genDR = DR;
+      //  genId = genparticle->pdgId();
+      //  genMother = genparticle->motherRef(0)->pdgId();
+      //  genPt_1 = genparticle->pt();
+      //  genEta_1 = genparticle->eta();
+      //  genPhi_1 = genparticle->phi();
+      //  genM_1 = genparticle->mass();
+      //}
+      if (genparticle->status() > 21 && genparticle->status() < 41){
+        if (genparticle->pdgId() == 23) { Z_pt = genparticle->pt(); Z_eta = genparticle->eta(); }
+        if (genparticle->pdgId() == 25) { Higgs_pt = genparticle->pt(); Higgs_eta = genparticle->eta(); genPt_1 = genparticle->pt(); genEta_1 = genparticle->eta(); genPhi_1 = genparticle->phi(); genM_1 = genparticle->mass(); }
+      }
+      if (genparticle->status() > 21 && genparticle->status() < 41 && genparticle->motherRef(0)->pdgId() == 25) {
+        cout<<"higgs daughters: "<<genparticle->pdgId()<<"\t"<<genparticle->pt()<<"\t"<<genparticle->eta()<<"\t"<<genparticle->phi()<<"\t"<<genparticle->energy()<<endl;
+        TLorentzVector temp;
+        temp.SetPtEtaPhiE(genparticle->pt(), genparticle->eta(), genparticle->phi(), genparticle->energy());
+        subJets->push_back(temp);
+      }
+
+    }
+  }
+  if(subJets->size() > 1) { genDR_Hbb = reco::deltaR(subJets->at(0).Eta(), subJets->at(0).Phi(), subJets->at(1).Eta(), subJets->at(1).Phi()); }
+
   Handle<vector<reco::CaloJet> > jets;
   if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
     for (const reco::CaloJet &jet : *jets) {
@@ -388,8 +429,10 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   else
     cout<<"Error getting calo jets"<<endl;
 
-  Handle<vector<pat::Jet> > jetsAK8;
 
+  //pat::Jet recoJet_1;
+
+  Handle<vector<pat::Jet> > jetsAK8;
   if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
     for (const pat::Jet &jetAK8 : *jetsAK8) {
       if(jetAK8.pt() > recoPt_ ) {
@@ -399,16 +442,27 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
         ak8Jets->push_back(temp);
         if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
-          goodJetsAK8.push_back(jetAK8);
+            goodJetsAK8.push_back(jetAK8);
         }
+        // if using ak4 jets instead:
+        //double DR = reco::deltaR(genEta_1, genPhi_1, jetAK8.eta(), jetAK8.phi());
+        //if (DR < genDR){
+        //  genDR = DR;
+        //  genId = 25;
+        //  recoPt_1 = jetAK8.pt();
+        //  recoEta_1 = jetAK8.eta();
+        //  recoPhi_1 = jetAK8.phi();
+        //  recoJet_1 = jetAK8;
+        //  goodJetsAK8.push_back(jetAK8);
+        //}
       }
     }
   }
   else
     cout<<"Error getting AK8 jets"<<endl;
 
-  zeroOutAllVariables();
-  if(goodJetsAK8.size()>0){
+//  zeroOutAllVariables();
+  if(goodJetsAK8.size() > 0){
 
     for(auto jet:goodJetsAK8){
       tau1.push_back(jet.userFloat("NjettinessAK8Puppi:tau1"));
@@ -445,7 +499,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     l1extra::L1JetParticle l1Jet_1;
     if(l1JetsSorted.size() > 0){
       for(auto jet : l1JetsSorted){
-        if(reco::deltaR(jet, recoJet_1)<0.4 && foundL1Jet_1 == 0 ){
+        if(reco::deltaR(jet, recoJet_1) < 0.4 && foundL1Jet_1 == 0){
           l1Jet_1 = jet;
           l1Pt_1  = jet.pt();
           l1Eta_1 = jet.eta();
@@ -461,7 +515,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     int foundSeed_1 = 0;
     if(seeds.size() > 0){
       for(auto seed : seeds){
-        if(reco::deltaR(seed, recoJet_1)<0.4 && foundSeed_1 == 0 ){
+        if(reco::deltaR(seed, recoJet_1) < 0.4 && foundSeed_1 == 0){
           seedPt_1  = seed.pt();
           seedEta_1 = seed.eta();
           seedPhi_1 = seed.phi();
@@ -474,26 +528,42 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
   }
 
-  edm::Handle<reco::GenParticleCollection> genParticles;
-  if(evt.getByToken(genSrc_, genParticles)){//Begin Getting Gen Particles
-    for (reco::GenParticleCollection::const_iterator genparticle = genParticles->begin(); genparticle != genParticles->end(); genparticle++){
-      double DR = reco::deltaR(recoEta_1, recoPhi_1, genparticle->eta(), genparticle->phi());
-      if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
-        genDR = DR;
-        genId = genparticle->pdgId();
-        genMother = genparticle->motherRef(0)->pdgId();
-        genPt_1 = genparticle->pt();
-        genEta_1 = genparticle->eta();
-        genPhi_1 = genparticle->phi();
-        genM_1 = genparticle->mass();
-      }
-    }
-  }
+  edm::Handle<edm::View<pat::MET>> offMET;
+  evt.getByToken(METSrc_, offMET);
+  const edm::View<pat::MET> & metsPF = *offMET;
+  recoMET = (double) metsPF[0].pt();
+
+//  double nDaus=0, bEta_1=-99, bEta_2=-99, bPhi_1=-99, bPhi_2=-99; 
+//  edm::Handle<reco::GenParticleCollection> genParticles;
+//  if(evt.getByToken(genSrc_, genParticles)){//Begin Getting Gen Particles
+//    for (reco::GenParticleCollection::const_iterator genparticle = genParticles->begin(); genparticle != genParticles->end(); genparticle++){
+//      //std::cout<<"particle: "<<genparticle->pdgId()<<"\t"<<genparticle->status()<<std::endl;
+//      double DR = reco::deltaR(recoEta_1, recoPhi_1, genparticle->eta(), genparticle->phi());
+//      if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
+//        genDR = DR;
+//        genId = genparticle->pdgId();
+//        genMother = genparticle->motherRef(0)->pdgId();
+//        genPt_1 = genparticle->pt();
+//        genEta_1 = genparticle->eta();
+//        genPhi_1 = genparticle->phi();
+//        genM_1 = genparticle->mass();
+//      }
+//      if (genparticle->status() > 21 && genparticle->status() < 41){
+//        if (genparticle->pdgId() == 23) { Z_pt = genparticle->pt(); Z_eta = genparticle->eta(); }
+//        if (genparticle->pdgId() == 25) { Higgs_pt = genparticle->pt(); Higgs_eta = genparticle->eta(); }
+//        if (genparticle->motherRef(0)->pdgId() == 25) nDaus++;
+//        if (nDaus == 1) { bEta_1 = genparticle->eta(); bPhi_1 = genparticle->phi(); }
+//        if (nDaus == 2) { bEta_2 = genparticle->eta(); bPhi_2 = genparticle->phi(); }
+//      }
+//    }
+//  }
+//  if(bEta_1 > -99 && bEta_2 > -99) { genDR_Hbb = reco::deltaR(bEta_1, bPhi_1, bEta_2, bPhi_2); }
   efficiencyTree->Fill();
 }
 
 void BoostedJetStudies::zeroOutAllVariables(){
-  genPt_1=-99; genEta_1=-99; genPhi_1=-99; genM_1=-99; genDR=99; genId=-99; genMother=-99;
+  genPt_1=-99; genEta_1=-99; genPhi_1=-99; genM_1=-99; genDR=99; genId=-99; genMother=-99; recoMET=-99;
+  genDR_Hbb=-99; Higgs_pt=-99; Higgs_eta=-99; Z_pt=-99; Z_eta=-99;
   seedPt_1=-99; seedEta_1=-99; seedPhi_1=-99; seedNthJet_1=-99;
   recoPt_1=-99; recoEta_1=-99; recoPhi_1=-99; recoNthJet_1=-99;
   l1Pt_1=-99; l1Eta_1=-99; l1Phi_1=-99; l1NthJet_1=-99;
@@ -505,13 +575,19 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("lumi",    &lumi,    "lumi/I");
     tree->Branch("event",   &event,   "event/I");
     tree->Branch("nPV",     &nPV,     "nPV/I");
-    tree->Branch("genPt_1",       &genPt_1,     "genPt_1/D");
-    tree->Branch("genEta_1",      &genEta_1,    "genEta_1/D");
-    tree->Branch("genPhi_1",      &genPhi_1,    "genPhi_1/D");
-    tree->Branch("genM_1",        &genM_1,      "genM_1/D");
-    tree->Branch("genDR",         &genDR,       "genDR/D");
-    tree->Branch("genId",         &genId,       "genId/I");
-    tree->Branch("genMother",     &genMother,   "genMother/I");
+    tree->Branch("recoMET",       &recoMET,      "recoMET/D");
+    tree->Branch("genPt_1",       &genPt_1,      "genPt_1/D");
+    tree->Branch("genEta_1",      &genEta_1,     "genEta_1/D");
+    tree->Branch("genPhi_1",      &genPhi_1,     "genPhi_1/D");
+    tree->Branch("genM_1",        &genM_1,       "genM_1/D");
+    tree->Branch("genDR",         &genDR,        "genDR/D");
+    tree->Branch("genId",         &genId,        "genId/I");
+    tree->Branch("genMother",     &genMother,    "genMother/I");
+    tree->Branch("genDR_Hbb",     &genDR_Hbb,    "genDR_Hbb/D");
+    tree->Branch("Higgs_pt",      &Higgs_pt,     "Higgs_pt/D");
+    tree->Branch("Higgs_eta",     &Higgs_eta,    "Higgs_eta/D");
+    tree->Branch("Z_pt",          &Z_pt,         "Z_pt/D");
+    tree->Branch("Z_eta",         &Z_eta,        "Z_eta/D");
     tree->Branch("seedPt_1",      &seedPt_1,     "seedPt_1/D");
     tree->Branch("seedEta_1",     &seedEta_1,    "seedEta_1/D");
     tree->Branch("seedPhi_1",     &seedPhi_1,    "seedPhi_1/D");
@@ -535,6 +611,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("egseed", "vector<TLorentzVector>", &egseed, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
     tree->Branch("htseed", "vector<TLorentzVector>", &htseed, 32000, 0);
+    tree->Branch("mhthfseed", "vector<TLorentzVector>", &mhthfseed, 32000, 0);
     tree->Branch("ak8Jets", "vector<TLorentzVector>", &ak8Jets, 32000, 0);
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
     tree->Branch("hcalTPGs", "vector<TLorentzVector>", &hcalTPGs, 32000, 0);

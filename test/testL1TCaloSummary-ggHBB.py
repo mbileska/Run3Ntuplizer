@@ -50,10 +50,38 @@ process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
+#				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part1_757457_762757.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part2_8574_13874.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part3_5358_10658.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part4_4252_9552.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part5_2764_8064.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part6_9684_14984.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part7_1356_6656.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part8_6463_11763.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part9_5369_10669.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part10_9732_15032.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part11_5434_10734.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part12_8654_13954.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/MiniAOD/RunIIAutumn18MiniAOD_part13_9643_14943.root',
+#				"root://cms-xrd-global.cern.ch://store/mc/RunIIAutumn18MiniAOD/ZH_HToBB_ZToNuNu_M125_13TeV_powheg_pythia8/MINIAODSIM/102X_upgrade2018_realistic_v15-v1/110000/6340686B-CDEC-5E42-A004-BD829CDD00AF.root"
 ),
                             secondaryFileNames = cms.untracked.vstring(
-				'file:/eos/user/p/pdas/L1Boosted/ggHbb/DR/RunIIAutumn18DRPremix_step1_21Dec_0_5300.root'
+#				'file:/eos/user/p/pdas/L1Boosted/ggHbb/DR/RunIIAutumn18DRPremix_step1_21Dec_0_5300.root'
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part1_757457_762757.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part2_8574_13874.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part3_5358_10658.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part4_4252_9552.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part5_2764_8064.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part6_9684_14984.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part7_1356_6656.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part8_6463_11763.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part9_5369_10669.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part10_9732_15032.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part11_5434_10734.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part12_8654_13954.root',
+                                'file:/eos/user/p/pdas/L1Boosted/ZH/DR/RunIIAutumn18DRPremix_step1_part13_9643_14943.root',
+#				"root://cms-xrd-global.cern.ch://store/mc/RunIIFall18wmLHEGS/ZH_HToBB_ZToNuNu_M125_13TeV_powheg_pythia8/GEN-SIM/102X_upgrade2018_realistic_v11-v1/110000/71D75AEE-FDC7-D843-BAC5-BD0D9B6DDB02.root"
                             )
 )
 
@@ -83,7 +111,7 @@ process.out = cms.OutputModule("PoolOutputModule",
 #Output
 process.TFileService = cms.Service(
 	"TFileService",
-	fileName = cms.string("l1TNtuple-ggHBB.root")
+	fileName = cms.string("l1TNtuple-ZH-ak8.root")
 )
 
 process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
