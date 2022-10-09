@@ -4,10 +4,12 @@
 #include "TROOT.h"
 #include "TTree.h"
 #include "TFile.h"
+#include "TLorentzVector.h"
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+//#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -29,7 +31,7 @@
 
 #include "DataFormats/Math/interface/LorentzVector.h"
 
-#include "L1Trigger/Run3Ntuplizer/plugins/helpers.h"
+//#include "L1Trigger/Run3Ntuplizer/plugins/helpers.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
@@ -48,6 +50,7 @@
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/Tau.h"
+#include "DataFormats/PatCandidates/interface/Jet.h"
 
 #include "DataFormats/L1Trigger/interface/BXVector.h"
 #include "DataFormats/L1Trigger/interface/Jet.h"
@@ -67,7 +70,7 @@ bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i
 // class declaration
 //
 
-class BoostedJetStudies : public edm::EDAnalyzer {
+class BoostedJetStudies : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
   explicit BoostedJetStudies(const edm::ParameterSet&);
   ~BoostedJetStudies();
@@ -80,7 +83,7 @@ private:
   virtual void beginJob() override;
   virtual void endJob() override;
 
-  virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
+//  virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
   // ----------member data ---------------------------
   edm::EDGetTokenT<vector<reco::CaloJet> > jetSrc_;
@@ -380,9 +383,9 @@ BoostedJetStudies::endJob() {
 
 // ------------ method called when starting to processes a run  ------------
 
-void
-BoostedJetStudies::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
-}
+//void
+//BoostedJetStudies::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {
+//}
  
 // ------------ method called when ending the processing of a run  ------------
 /*
