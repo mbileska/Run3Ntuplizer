@@ -32,7 +32,7 @@
 using namespace std;
 
 void efficiency(){
-TCanvas *c1 =new TCanvas("c1", " ", 0, 0,700,1000);
+TCanvas *c1 =new TCanvas("c1", " ", 0, 0,600,700);
 c1->Range(0,0,1,1);
 c1->SetFillColor(0);
 c1->SetBorderMode(0);
@@ -91,21 +91,35 @@ if(TEfficiency::CheckConsistency(*h4,*h3))
   pEff2->Draw("same");
 }
 
-TLegend *legend1 = new TLegend(0.65, 0.3, 0.85, 0.45);
+TLegend *legend1 = new TLegend(0.45, 0.3, 0.8, 0.45);
 legend1->SetTextFont(42);
 legend1->SetLineColor(0);
 legend1->SetTextSize(0.045);
 legend1->SetFillColor(0);
-legend1->AddEntry(pEff1, "current", "l");
-legend1->AddEntry(pEff2, "modified", "l");
+legend1->AddEntry(pEff1, "emulator v1", "l");
+legend1->AddEntry(pEff2, "emulator v2", "l");
 legend1->Draw("same");
 
-TLatex *t1 = new TLatex(0.65,0.8," L1 objects p_{T} > 120 GeV");
+TLatex *t1 = new TLatex(0.65,0.45," L1 boosted p_{T} > 120 GeV");
 t1->SetNDC();
 t1->SetTextFont(42);
 t1->SetTextSize(0.045);
 t1->SetTextAlign(20);
 t1->Draw("same");
+
+TLatex *t2 = new TLatex(0.5,0.9," #bf{CMS} #it{Simulation Preliminary}         (13 TeV)");
+t2->SetNDC();
+t2->SetTextFont(42);
+t2->SetTextSize(0.045);
+t2->SetTextAlign(20);
+t2->Draw("same");
+
+TLatex *t3 = new TLatex(0.7,0.8," #bf{Boosted SM H #rightarrow bb} ");
+t3->SetNDC();
+t3->SetTextFont(42);
+t3->SetTextSize(0.035);
+t3->SetTextAlign(20);
+t3->Draw("same");
 
 c1->SaveAs("efficiencies.pdf");
 }
