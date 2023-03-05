@@ -96,6 +96,14 @@ process.source = cms.Source("PoolSource",
 #process.source.eventsToProcess = cms.untracked.VEventRange("319756:991181466","319756:928807791","319756:608032744","319756:309750363","319756:701995845","319756:181355847","319756:192667981","319756:192601340","319756:644859036","319756:110119890")
 process.source.eventsToProcess = cms.untracked.VEventRange("320673:86911699","320673:87167435","320673:87516475","320673:87159621","320673:86863194","320673:86867227","320673:87036209","320673:87377692","320673:87115094")
 
+## To use for de-bugging with Andrew's ntuple:
+#process.source = cms.Source("PoolSource",
+#    fileNames = cms.untracked.vstring('/store/data/Run2018D/EphemeralZeroBias4/MINIAOD/PromptReco-v2/000/320/673/00000/1E7213D9-8D97-E811-9961-FA163EF798AF.root'),
+#    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/EphemeralZeroBias4/RAW/v1/000/320/673/00000/F0A68212-3B95-E811-9155-FA163E3A97DC.root'),
+#)
+##process.source.eventsToProcess = cms.untracked.VEventRange("320673:86911699","320673:87167435","320673:87516475","320673:87159621","320673:86863194","320673:86867227","320673:87036209","320673:87377692","320673:87115094")
+#process.source.eventsToProcess = cms.untracked.VEventRange("320673:87167435")
+
 process.options = cms.untracked.PSet(
 
 )
