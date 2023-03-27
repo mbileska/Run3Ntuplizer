@@ -1,7 +1,9 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("L1TCaloSummaryTest")
+#process = cms.Process("L1TCaloSummaryTest")
+from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
+process = cms.Process("L1TCaloSummaryTest", Run2_2018)
 
 from FWCore.ParameterSet.VarParsing import VarParsing
 
@@ -32,7 +34,8 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '124X_mcRun3_2022_realistic_v8', '')
 
 #process.load('L1Trigger.Configuration.SimL1Emulator_cff')
 
@@ -83,7 +86,7 @@ process.out = cms.OutputModule("PoolOutputModule",
 #Output
 process.TFileService = cms.Service(
 	"TFileService",
-	fileName = cms.string("l1TNtuple-ggHBB.root")
+	fileName = cms.string("l1TNtuple-ggHBB_test.root")
 )
 
 process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)

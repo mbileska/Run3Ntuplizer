@@ -267,6 +267,7 @@ private:
 
   std::vector<TLorentzVector> *allRegions  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allL1Jets = new std::vector<TLorentzVector>;
+  std::vector<bool> allL1Signals;
   std::vector<std::vector<int>> jetRegionEt;
   std::vector<std::vector<int>> jetRegionEGVeto;
   std::vector<std::vector<int>> jetRegionTauVeto;
@@ -375,6 +376,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
   allRegions->clear();
   allL1Jets->clear();
+  allL1Signals.clear();
   jetRegionEt.clear();
   jetRegionEGVeto.clear();
   jetRegionTauVeto.clear();
@@ -647,6 +649,15 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         i++;
       }
     }
+    //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
+    //  const UCTObject* object = *i;
+    //  pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
+    //  eta = g.getUCTTowerEta(object->iEta());
+    //  phi = g.getUCTTowerPhi(object->iPhi());
+    //  bool isSignal = false;  
+    //  if(pt == l1Pt_1 && eta == l1Eta_1 && phi == l1Phi_1) isSignal = true;
+    //  allL1Signals.push_back(isSignal);
+    //}
 
     int j = 0;
     int foundSeed_1 = 0;
@@ -662,6 +673,16 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         j++;
       }
     }
+  }
+
+  for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
+    const UCTObject* object = *i;
+    pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
+    eta = g.getUCTTowerEta(object->iEta());
+    phi = g.getUCTTowerPhi(object->iPhi());
+    bool isSignal = false;
+    if(eta == l1Eta_1 && phi == l1Phi_1) isSignal = true;
+    allL1Signals.push_back(isSignal);
   }
 
   edm::Handle<reco::GenParticleCollection> genParticles;
@@ -727,6 +748,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("subJets", "vector<TLorentzVector>", &subJets, 32000, 0);
     tree->Branch("allRegions", "vector<TLorentzVector>", &allRegions, 32000, 0);
     tree->Branch("allL1Jets", "vector<TLorentzVector>", &allL1Jets, 32000, 0);
+    tree->Branch("allL1Signals",     &allL1Signals);
     tree->Branch("regionEta",        &regionEta);
     tree->Branch("regionPhi",        &regionPhi);
     tree->Branch("jetRegionEt",      &jetRegionEt);
