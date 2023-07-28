@@ -38,13 +38,6 @@
 #include "DataFormats/L1Trigger/interface/L1EtMissParticle.h"
 #include "DataFormats/L1Trigger/interface/L1EtMissParticleFwd.h"
 
-#include "DataFormats/L1Trigger/interface/L1EmParticle.h"
-#include "DataFormats/L1Trigger/interface/L1EmParticleFwd.h"
-#include "DataFormats/L1Trigger/interface/L1JetParticle.h"
-#include "DataFormats/L1Trigger/interface/L1JetParticleFwd.h"
-#include "DataFormats/L1Trigger/interface/L1EtMissParticle.h"
-#include "DataFormats/L1Trigger/interface/L1EtMissParticleFwd.h"
-
 #include "DataFormats/L1CaloTrigger/interface/L1CaloCollections.h"
 #include "DataFormats/L1CaloTrigger/interface/L1CaloRegion.h"
 
@@ -86,6 +79,7 @@ using namespace l1extra;
 using namespace std;
 
 bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i.pt()>j.pt()); };
+bool compareByObjectEt (UCTObject* i, UCTObject* j) { return(i->et() > j->et()); };
 
 float towerEtaMap[28]= {
     0.0435,
@@ -434,6 +428,37 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     exit(1);
   }
 
+  Handle<vector<reco::CaloJet> > jets;
+  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
+    for (const reco::CaloJet &jet : *jets) {
+      //std::cout<<jet.pt()<<std::endl;
+      if(jet.pt() > recoPt_ ) {
+        goodJets.push_back(jet);
+      }
+    }
+  }
+  else
+    cout<<"Error getting calo jets"<<std::endl;
+
+  Handle<vector<pat::Jet> > jetsAK8;
+
+  if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
+    for (const pat::Jet &jetAK8 : *jetsAK8) {
+      if(jetAK8.pt() > recoPt_ ) {
+        nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
+        nBHadrons.push_back(jetAK8.jetFlavourInfo().getbHadrons().size());
+        TLorentzVector temp ;
+        temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
+        ak8Jets->push_back(temp);
+        if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
+          goodJetsAK8.push_back(jetAK8);
+        }
+      }
+    }
+  }
+  else
+    cout<<"Error getting AK8 jets"<<std::endl;
+
   double pt = 0;
   double eta = -999.;
   double phi = -999.;
@@ -442,13 +467,58 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<int> region_eg;
   std::vector<int> region_tau;
 
-  //std::list<UCTObject*> boostedJetObjs = summaryCard->getBoostedJetObjs();
+  // Sort boosted objects by Et
   std::list<UCTObject*> boostedJetObjs = summaryCard.getBoostedJetObjs();
+  vector<UCTObject*> BoostedSorted;
   for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
+    BoostedSorted.push_back(*i);
+  }
+  std::sort(BoostedSorted.begin(), BoostedSorted.end(), compareByObjectEt);
+
+  int count = 0;
+
+  vector<int> indices_ak4;
+  indices_ak4.clear();
+  for(auto jet:goodJets){
+    float jetDR = 0.4;
+    int temp_index = -99;
+    count = 0;
+    for(auto object : BoostedSorted){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < jetDR){
+        jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
+        temp_index = count;
+      }
+      count++;
+    }
+    if(jetDR < 0.4) { std::cout<<temp_index<<std::endl; indices_ak4.push_back(temp_index); }
+  }
+
+  vector<int> indices_ak8;
+  indices_ak8.clear();
+  for(auto jet:goodJetsAK8){
+    float jetDR = 0.4;
+    int temp_index = -99;
+    count = 0;
+    for(auto object : BoostedSorted){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < jetDR){
+        jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
+        temp_index = count;
+      } 
+      count++;
+    }
+    if(jetDR < 0.4) { std::cout<<temp_index<<std::endl; indices_ak8.push_back(temp_index); }
+  }   
+
+  count = -1;
+
+  //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
+  for(auto object : BoostedSorted){
+    count++;
+    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue;
     region_ets.clear();
     region_eg.clear();
     region_tau.clear();
-    const UCTObject* object = *i;
+    //const UCTObject* object = *i;
     pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
     eta = g.getUCTTowerEta(object->iEta());
     phi = g.getUCTTowerPhi(object->iPhi());
@@ -492,6 +562,8 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     jetRegionEt.push_back(region_ets);
     jetRegionEGVeto.push_back(region_eg);
     jetRegionTauVeto.push_back(region_tau);
+    //count++;
+    if (count == 9) break;
 
     //bitset<12> eta_in = object->activeTowerEta(); 
     //bitset<12> phi_in = object->activeTowerPhi();
@@ -536,6 +608,8 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
    // std::cout<<"nActiveRegion: "<<nActiveRegion<<std::endl;
   }
 
+  // Sorting and storing only leading 10 boosted objects
+
   // Accessing existing L1 seed stored in MINIAOD
   edm::Handle<BXVector<l1t::Jet>> stage2Jets;
   if(!evt.getByToken(stage2JetToken_, stage2Jets)) cout<<"ERROR GETTING THE STAGE 2 JETS"<<std::endl;
@@ -569,36 +643,36 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     l1Jets->push_back(temp);
   }
 
-  // Start Runing Analysis
-  Handle<vector<reco::CaloJet> > jets;
-  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
-    for (const reco::CaloJet &jet : *jets) {
-      if(jet.pt() > recoPt_ ) {
-	goodJets.push_back(jet);
-      }
-    }
-  }
-  else
-    cout<<"Error getting calo jets"<<std::endl;
+  // Start Running Analysis
+  //Handle<vector<reco::CaloJet> > jets;
+  //if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
+  //  for (const reco::CaloJet &jet : *jets) {
+  //    if(jet.pt() > recoPt_ ) {
+  //      goodJets.push_back(jet);
+  //    }
+  //  }
+  //}
+  //else
+  //  cout<<"Error getting calo jets"<<std::endl;
 
-  Handle<vector<pat::Jet> > jetsAK8;
+  //Handle<vector<pat::Jet> > jetsAK8;
 
-  if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
-    for (const pat::Jet &jetAK8 : *jetsAK8) {
-      if(jetAK8.pt() > recoPt_ ) {
-        nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
-        nBHadrons.push_back(jetAK8.jetFlavourInfo().getbHadrons().size());
-        TLorentzVector temp ;
-        temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
-        ak8Jets->push_back(temp);
-        if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
-          goodJetsAK8.push_back(jetAK8);
-        }
-      }
-    }
-  }
-  else
-    cout<<"Error getting AK8 jets"<<std::endl;
+  //if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
+  //  for (const pat::Jet &jetAK8 : *jetsAK8) {
+  //    if(jetAK8.pt() > recoPt_ ) {
+  //      nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
+  //      nBHadrons.push_back(jetAK8.jetFlavourInfo().getbHadrons().size());
+  //      TLorentzVector temp ;
+  //      temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
+  //      ak8Jets->push_back(temp);
+  //      if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
+  //        goodJetsAK8.push_back(jetAK8);
+  //      }
+  //    }
+  //  }
+  //}
+  //else
+  //  cout<<"Error getting AK8 jets"<<std::endl;
 
   zeroOutAllVariables();
   if(goodJetsAK8.size()>0){
@@ -675,14 +749,19 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     }
   }
 
-  for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
-    const UCTObject* object = *i;
-    pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
+  //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
+  //  const UCTObject* object = *i;
+  count = -1;
+  for(auto object : BoostedSorted){
+    count++;
+    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue;
     eta = g.getUCTTowerEta(object->iEta());
     phi = g.getUCTTowerPhi(object->iPhi());
     bool isSignal = false;
     if(eta == l1Eta_1 && phi == l1Phi_1) isSignal = true;
     allL1Signals.push_back(isSignal);
+    //count++;
+    if (count == 9) break;
   }
 
   edm::Handle<reco::GenParticleCollection> genParticles;
