@@ -475,38 +475,38 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   }
   std::sort(BoostedSorted.begin(), BoostedSorted.end(), compareByObjectEt);
 
-  int count = 0;
+  int count = 0; // only consider up to 20 jets per event, match boosted objects to both ak4 and ak8 jets within dR < 0.2 (0.4 selects too many boosted)
 
   vector<int> indices_ak4;
   indices_ak4.clear();
-  for(auto jet:goodJets){
-    float jetDR = 0.4;
+  count = 0;
+  for(auto object : BoostedSorted){
+    float jetDR = 0.2;
     int temp_index = -99;
-    count = 0;
-    for(auto object : BoostedSorted){
-      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < jetDR){
+    for(auto jet:goodJets){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.2){
         jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
         temp_index = count;
       }
-      count++;
     }
-    if(jetDR < 0.4) { std::cout<<temp_index<<std::endl; indices_ak4.push_back(temp_index); }
+    if(jetDR < 0.2) indices_ak4.push_back(temp_index);
+    count++;
   }
 
   vector<int> indices_ak8;
   indices_ak8.clear();
-  for(auto jet:goodJetsAK8){
-    float jetDR = 0.4;
+  count = 0;
+  for(auto object : BoostedSorted){
+    float jetDR = 0.2;
     int temp_index = -99;
-    count = 0;
-    for(auto object : BoostedSorted){
-      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < jetDR){
+    for(auto jet:goodJetsAK8){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.2){
         jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
         temp_index = count;
       } 
-      count++;
     }
-    if(jetDR < 0.4) { std::cout<<temp_index<<std::endl; indices_ak8.push_back(temp_index); }
+    if(jetDR < 0.2) indices_ak8.push_back(temp_index);
+    count++;
   }   
 
   count = -1;
@@ -514,7 +514,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
   for(auto object : BoostedSorted){
     count++;
-    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue;
+    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue; // only consider matched boosted objects
     region_ets.clear();
     region_eg.clear();
     region_tau.clear();
@@ -563,7 +563,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     jetRegionEGVeto.push_back(region_eg);
     jetRegionTauVeto.push_back(region_tau);
     //count++;
-    if (count == 9) break;
+    if (count == 19) break;
 
     //bitset<12> eta_in = object->activeTowerEta(); 
     //bitset<12> phi_in = object->activeTowerPhi();
@@ -608,7 +608,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
    // std::cout<<"nActiveRegion: "<<nActiveRegion<<std::endl;
   }
 
-  // Sorting and storing only leading 10 boosted objects
 
   // Accessing existing L1 seed stored in MINIAOD
   edm::Handle<BXVector<l1t::Jet>> stage2Jets;
@@ -689,11 +688,11 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         subJets->push_back(temp);
       }
       subJetHFlav.push_back(HFlav);
-      //take more variables from here: https://github.com/gouskos/HiggsToBBNtupleProducerTool/blob/opendata_80X/NtupleAK8/src/FatJetInfoFiller.cc#L215-L217
+      // take more variables from here: https://github.com/gouskos/HiggsToBBNtupleProducerTool/blob/opendata_80X/NtupleAK8/src/FatJetInfoFiller.cc#L215-L217
       // https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideBTagMCTools
     }
 
-    //Match to boosted jets and see if we can match subjettiness functions...
+    // Match to boosted jets and see if we can match subjettiness functions...
     vector<l1extra::L1JetParticle> l1JetsSorted;
     for( vector<l1extra::L1JetParticle>::const_iterator l1Jet = l1Boosted->begin(); l1Jet != l1Boosted->end(); l1Jet++ ){
       l1JetsSorted.push_back(*l1Jet);
@@ -723,15 +722,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         i++;
       }
     }
-    //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
-    //  const UCTObject* object = *i;
-    //  pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
-    //  eta = g.getUCTTowerEta(object->iEta());
-    //  phi = g.getUCTTowerPhi(object->iPhi());
-    //  bool isSignal = false;  
-    //  if(pt == l1Pt_1 && eta == l1Eta_1 && phi == l1Phi_1) isSignal = true;
-    //  allL1Signals.push_back(isSignal);
-    //}
 
     int j = 0;
     int foundSeed_1 = 0;
@@ -749,26 +739,12 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     }
   }
 
-  //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
-  //  const UCTObject* object = *i;
-  count = -1;
-  for(auto object : BoostedSorted){
-    count++;
-    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue;
-    eta = g.getUCTTowerEta(object->iEta());
-    phi = g.getUCTTowerPhi(object->iPhi());
-    bool isSignal = false;
-    if(eta == l1Eta_1 && phi == l1Phi_1) isSignal = true;
-    allL1Signals.push_back(isSignal);
-    //count++;
-    if (count == 9) break;
-  }
-
   edm::Handle<reco::GenParticleCollection> genParticles;
   if(evt.getByToken(genSrc_, genParticles)){//Begin Getting Gen Particles
     for (reco::GenParticleCollection::const_iterator genparticle = genParticles->begin(); genparticle != genParticles->end(); genparticle++){
       double DR = reco::deltaR(recoEta_1, recoPhi_1, genparticle->eta(), genparticle->phi());
-      if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
+      //if (DR < genDR && genparticle->status() > 21 && genparticle->status() < 41){
+      if(genparticle->pdgId() == 25){
         genDR = DR;
         genId = genparticle->pdgId();
         genMother = genparticle->motherRef(0)->pdgId();
@@ -779,6 +755,18 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
       }
     }
   }
+
+  count = 0;
+  double L1DR = 0.4;
+  int L1Match = 99;
+  for( vector<TLorentzVector>::const_iterator l1Jet = allL1Jets->begin(); l1Jet != allL1Jets->end(); l1Jet++ ){
+    allL1Signals.push_back(false);
+    double DR = reco::deltaR(genEta_1, genPhi_1, l1Jet->Eta(), l1Jet->Phi()); // consider distance from the gen Higgs
+    if(DR < L1DR) { L1Match = count; L1DR = DR; }
+    count++;
+  }
+  if(L1Match < 99) allL1Signals[L1Match] = true; // only one boosted Higgs in each event!
+
   efficiencyTree->Fill();
   inputRegions.clear();
 }
@@ -852,73 +840,6 @@ BoostedJetStudies::endJob() {
 
 void
 BoostedJetStudies::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup) {}
-//  if (!L1TCaloLayer1FetchLUTs(lutsTokens,
-//                              iSetup,
-//                              ecalLUT,
-//                              hcalLUT,
-//                              hfLUT,
-//                              ePhiMap,
-//                              hPhiMap,
-//                              hfPhiMap,
-//                              true,
-//                              true,
-//                              true,
-//                              true,
-//                              true,
-//                              fwVersion)) {
-//    //LOG_ERROR << "L1TCaloLayer1::beginRun: failed to fetch LUTS - using unity" << std::endl;
-//    std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> eCalLayer1EtaSideEtArray;
-//    std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> hCalLayer1EtaSideEtArray;
-//    std::array<std::array<uint32_t, nEtBins>, nHfEtaBins> hfLayer1EtaEtArray;
-//    ecalLUT.push_back(eCalLayer1EtaSideEtArray);
-//    hcalLUT.push_back(hCalLayer1EtaSideEtArray);
-//    hfLUT.push_back(hfLayer1EtaEtArray);
-//  }
-//  for (uint32_t twr = 0; twr < twrList.size(); twr++) {
-//    int iphi = twrList[twr]->caloPhi();
-//    int ieta = twrList[twr]->caloEta();
-//    if (ieta < 0) {
-//      iphi -= 1;
-//    } else {
-//      iphi += 71;
-//    }
-//    twrList[twr]->setECALLUT(&ecalLUT[ePhiMap[iphi]]);
-//    twrList[twr]->setHCALLUT(&hcalLUT[hPhiMap[iphi]]);
-//    twrList[twr]->setHFLUT(&hfLUT[hfPhiMap[iphi]]);
-//  }
-  //if(!L1TCaloLayer1FetchLUTs(iSetup, ecalLUT, hcalLUT, hfLUT, true, true, true, true, true)) {
-  //  std::cerr << "L1TCaloLayer1::beginRun: failed to fetch LUTS - using unity" << std::endl;
-  //}
-  //for(uint32_t twr = 0; twr < twrList.size(); twr++) {
-  //  twrList[twr]->setECALLUT(&ecalLUT);
-  //  twrList[twr]->setHCALLUT(&hcalLUT);
-  //  twrList[twr]->setHFLUT(&hfLUT);
-  //}
-//}
- 
-// ------------ method called when ending the processing of a run  ------------
-/*
-  void
-  BoostedJetStudies::endRun(edm::Run const&, edm::EventSetup const&)
-  {
-  }
-*/
- 
-// ------------ method called when starting to processes a luminosity block  ------------
-/*
-  void
-  BoostedJetStudies::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-  {
-  }
-*/
- 
-// ------------ method called when ending the processing of a luminosity block  ------------
-/*
-  void
-  BoostedJetStudies::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-  {
-  }
-*/
  
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
