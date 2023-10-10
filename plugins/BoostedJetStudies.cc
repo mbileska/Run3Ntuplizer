@@ -262,6 +262,7 @@ private:
   std::vector<TLorentzVector> *allRegions  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allL1Jets = new std::vector<TLorentzVector>;
   std::vector<bool> allL1Signals;
+  std::vector<float> allL1DR_withReco;
   std::vector<std::vector<int>> jetRegionEt;
   std::vector<std::vector<int>> jetRegionEGVeto;
   std::vector<std::vector<int>> jetRegionTauVeto;
@@ -371,6 +372,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   allRegions->clear();
   allL1Jets->clear();
   allL1Signals.clear();
+  allL1DR_withReco.clear();
   jetRegionEt.clear();
   jetRegionEGVeto.clear();
   jetRegionTauVeto.clear();
@@ -761,6 +763,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   int L1Match = 99;
   for( vector<TLorentzVector>::const_iterator l1Jet = allL1Jets->begin(); l1Jet != allL1Jets->end(); l1Jet++ ){
     allL1Signals.push_back(false);
+    allL1DR_withReco.push_back(reco::deltaR(recoEta_1, recoPhi_1, l1Jet->Eta(), l1Jet->Phi())); // store distance from the AK8 jet matched to the Higgs
     double DR = reco::deltaR(genEta_1, genPhi_1, l1Jet->Eta(), l1Jet->Phi()); // consider distance from the gen Higgs
     if(DR < L1DR) { L1Match = count; L1DR = DR; }
     count++;
@@ -816,6 +819,7 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("allRegions", "vector<TLorentzVector>", &allRegions, 32000, 0);
     tree->Branch("allL1Jets", "vector<TLorentzVector>", &allL1Jets, 32000, 0);
     tree->Branch("allL1Signals",     &allL1Signals);
+    tree->Branch("allL1DR_withReco", &allL1DR_withReco);
     tree->Branch("regionEta",        &regionEta);
     tree->Branch("regionPhi",        &regionPhi);
     tree->Branch("jetRegionEt",      &jetRegionEt);
