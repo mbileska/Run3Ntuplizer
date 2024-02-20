@@ -2,22 +2,22 @@ Installation:
 
 ```
 
-cmsrel CMSSW_12_4_3
-cd CMSSW_12_4_3/src/
+cmssw-el7
+cmsrel CMSSW_13_3_0
+cd CMSSW_13_3_0/src/
 cmsenv
 git cms-init
-git remote add cms-l1t-offline git@github.com:cms-l1t-offline/cmssw.git
 git remote add pallabidas https://github.com/pallabidas/cmssw.git
-git cms-merge-topic pallabidas:l1boosted-regioninfo
+git cms-merge-topic pallabidas:l1boosted-regioninfo-133X
 cd L1Trigger
-git clone -b L1boosted_124X_MLtagger git@github.com:pallabidas/Run3Ntuplizer.git
+git clone -b L1boosted_133X_MLtagger git@github.com:pallabidas/Run3Ntuplizer.git
 cd ..
 scram b -j 12
 
 cd L1Trigger/Run3Ntuplizer/test
 
 ## to run boosted ggHbb events
-cmsRun testL1TCaloSummary-ggHbb.py
+cmsRun testL1TCaloSummary-ggHBB.py
 
 
 ```
