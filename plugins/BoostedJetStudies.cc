@@ -204,7 +204,6 @@ private:
   edm::EDGetTokenT<BXVector<l1t::Tau>> stage2TauToken_;
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
   edm::EDGetTokenT<L1CaloRegionCollection> regionToken_;
-  //const L1TCaloLayer1FetchLUTsTokens lutsTokens;
 
   std::vector<std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> > ecalLUT;
   std::vector<std::array<std::array<std::array<uint32_t, nEtBins>, nCalSideBins>, nCalEtaBins> > hcalLUT;
@@ -257,18 +256,15 @@ private:
   int fwVersion;
   double activityFraction12;
 
-  //UCTSummaryCard *summaryCard;
-
   std::vector<TLorentzVector> *allRegions  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *allL1Jets = new std::vector<TLorentzVector>;
-  std::vector<bool> allL1Signals;
+  std::vector<TLorentzVector> *allL1Jets_loose = new std::vector<TLorentzVector>;
+  std::vector<int> allL1Signals;
   std::vector<float> allL1DR_withReco;
   std::vector<std::vector<int>> jetRegionEt;
   std::vector<std::vector<int>> jetRegionEGVeto;
   std::vector<std::vector<int>> jetRegionTauVeto;
   std::vector<string> regionEta, regionPhi;
-
-  //std::vector<string> etaBits, phiBits, etaBits12, phiBits12, regionEta, regionPhi;
 
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
@@ -282,7 +278,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
   stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
-  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted",""))),
+  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("simCaloStage2Layer1Summary","Boosted",""))),
   regionToken_(consumes<L1CaloRegionCollection>(edm::InputTag("simCaloStage2Layer1Digis"))),
   nPumBins(iConfig.getParameter<unsigned int>("nPumBins")),
   pumLUT(nPumBins, std::vector<std::vector<uint32_t>>(2, std::vector<uint32_t>(13))),
@@ -316,10 +312,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
     }
   }
 
-  //summaryCard = new UCTSummaryCard(&pumLUT, jetSeed, tauSeed, tauIsolationFactor, eGammaSeed, eGammaIsolationFactor);
-
   // Initialize the Tree
-
   recoPt_      = iConfig.getParameter<double>("recoPtCut");
   nEvents      = tfs_->make<TH1F>( "nEvents"  , "nEvents", 2,  0., 1. );
   efficiencyTree = tfs_->make<TTree>("efficiencyTree", "Gen Matched Jet Tree ");
@@ -329,12 +322,12 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
 BoostedJetStudies::~BoostedJetStudies() {
   delete allRegions;
   delete allL1Jets;
+  delete allL1Jets_loose;
   delete l1Jets;
   delete seed180;
   delete tauseed;
   delete ak8Jets;
   delete subJets;
-  //if(summaryCard != 0) delete summaryCard;
 }
 
 //
@@ -371,6 +364,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
   allRegions->clear();
   allL1Jets->clear();
+  allL1Jets_loose->clear();
   allL1Signals.clear();
   allL1DR_withReco.clear();
   jetRegionEt.clear();
@@ -380,7 +374,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   regionPhi.clear();
 
   UCTGeometry g;
-  //summaryCard->clearRegions();
   UCTSummaryCard summaryCard = UCTSummaryCard(&pumLUT, jetSeed, tauSeed, tauIsolationFactor, eGammaSeed, eGammaIsolationFactor);
   std::vector<UCTRegion*> inputRegions;
   inputRegions.clear();
@@ -400,14 +393,12 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     uint32_t card = g.getCard(t.first, t.second);
     uint32_t region = g.getRegion(absCaloEta, absCaloPhi);
     UCTRegion* test = new UCTRegion(crate, card, negativeEta, region, fwVersion);
-    //std::cout<<"processing...."<<std::endl;
     if(!test->process()) std::cout<<"failed to process region"<<std::endl;
     test->setRegionSummary(i.raw());
     inputRegions.push_back(test);
 
     uint16_t test_raw = i.raw();
     uint32_t test_et = i.et();
-    //std::cout<<test_et<<std::endl;
     uint32_t test_rEta = i.id().ieta();
     uint32_t test_rPhi = i.id().iphi();
     UCTRegionIndex test_rIndex = g.getUCTRegionIndexFromL1CaloRegion(test_rEta, test_rPhi);
@@ -421,19 +412,17 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     temp.SetPtEtaPhiE(pt,eta,phi,pt);
     allRegions->push_back(temp);
   }
-  //summaryCard->setRegionData(inputRegions);
   summaryCard.setRegionData(inputRegions);
 
-  //if (!summaryCard->process()) {
   if (!summaryCard.process()) {
     edm::LogError("L1TCaloSummary") << "UCT: Failed to process summary card" << std::endl;
     exit(1);
   }
 
+  // Get Reco AK4 Jets
   Handle<vector<reco::CaloJet> > jets;
-  if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
+  if(evt.getByToken(jetSrc_, jets)){
     for (const reco::CaloJet &jet : *jets) {
-      //std::cout<<jet.pt()<<std::endl;
       if(jet.pt() > recoPt_ ) {
         goodJets.push_back(jet);
       }
@@ -442,9 +431,9 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   else
     cout<<"Error getting calo jets"<<std::endl;
 
+  // Get Reco AK8 Jets
   Handle<vector<pat::Jet> > jetsAK8;
-
-  if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
+  if(evt.getByToken(jetSrcAK8_, jetsAK8)){
     for (const pat::Jet &jetAK8 : *jetsAK8) {
       if(jetAK8.pt() > recoPt_ ) {
         nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
@@ -452,7 +441,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
         TLorentzVector temp ;
         temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
         ak8Jets->push_back(temp);
-        if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
+        if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){  // analysis cuts
           goodJetsAK8.push_back(jetAK8);
         }
       }
@@ -481,46 +470,51 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
 
   vector<int> indices_ak4;
   indices_ak4.clear();
+  vector<int> indices_loose_ak4;
+  indices_loose_ak4.clear();
   count = 0;
   for(auto object : BoostedSorted){
-    float jetDR = 0.2;
+    float jetDR = 0.4;
     int temp_index = -99;
     for(auto jet:goodJets){
-      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.2){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.4){
         jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
         temp_index = count;
       }
     }
     if(jetDR < 0.2) indices_ak4.push_back(temp_index);
+    else if(jetDR < 0.4) indices_loose_ak4.push_back(temp_index);
     count++;
   }
 
   vector<int> indices_ak8;
   indices_ak8.clear();
+  vector<int> indices_loose_ak8;
+  indices_loose_ak8.clear();
   count = 0;
   for(auto object : BoostedSorted){
-    float jetDR = 0.2;
+    float jetDR = 0.4;
     int temp_index = -99;
     for(auto jet:goodJetsAK8){
-      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.2){
+      if(reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi())) < 0.4){
         jetDR = reco::deltaR(jet.eta(), jet.phi(), g.getUCTTowerEta(object->iEta()), g.getUCTTowerPhi(object->iPhi()));
         temp_index = count;
       } 
     }
     if(jetDR < 0.2) indices_ak8.push_back(temp_index);
+    else if(jetDR < 0.4) indices_loose_ak8.push_back(temp_index);
     count++;
   }   
 
   count = -1;
+  int jet_count = 0;
 
-  //for(std::list<UCTObject*>::const_iterator i = boostedJetObjs.begin(); i != boostedJetObjs.end(); i++) {
   for(auto object : BoostedSorted){
     count++;
-    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end())) continue; // only consider matched boosted objects
+    if(!( std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end() || std::find(indices_loose_ak4.begin(), indices_loose_ak4.end(), count) != indices_loose_ak4.end() || std::find(indices_loose_ak8.begin(), indices_loose_ak8.end(), count) != indices_loose_ak8.end())) continue; // only consider matched boosted objects
     region_ets.clear();
     region_eg.clear();
     region_tau.clear();
-    //const UCTObject* object = *i;
     pt = ((double) object->et()) * caloScaleFactor * boostedJetPtFactor;
     eta = g.getUCTTowerEta(object->iEta());
     phi = g.getUCTTowerPhi(object->iPhi());
@@ -552,64 +546,18 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     regionEta.push_back(activeRegionEtaPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
     regionPhi.push_back(activeRegionPhiPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
 
-    //std::cout<<pt<<"\t"<<eta<<"\t"<<phi<<"\t"<<object->boostedJetRegionET()[0]<<"\t"<<object->boostedJetRegionET()[1]<<"\t"<<object->boostedJetRegionET()[2]<<"\t"<<object->boostedJetRegionET()[3]<<std::endl;
     TLorentzVector temp;
     temp.SetPtEtaPhiE(pt,eta,phi,pt);
-    allL1Jets->push_back(temp);
 
-    //jetRegionEt.push_back(object->boostedJetRegionET());
-    //jetRegionEGVeto.push_back(object->boostedJetRegionEGammaVeto());
-    //jetRegionTauVeto.push_back(object->boostedJetRegionTauVeto());
-    //std::cout<<region_ets.size()<<"\t"<<region_eg.size()<<"\t"<<region_tau.size()<<std::endl;
+    if(std::find(indices_ak4.begin(), indices_ak4.end(), count) != indices_ak4.end() || std::find(indices_ak8.begin(), indices_ak8.end(), count) != indices_ak8.end()) allL1Jets->push_back(temp);
+    else if(std::find(indices_loose_ak4.begin(), indices_loose_ak4.end(), count) != indices_loose_ak4.end() || std::find(indices_loose_ak8.begin(), indices_loose_ak8.end(), count) != indices_loose_ak8.end()) allL1Jets_loose->push_back(temp);
+
     jetRegionEt.push_back(region_ets);
     jetRegionEGVeto.push_back(region_eg);
     jetRegionTauVeto.push_back(region_tau);
-    //count++;
-    if (count == 19) break;
-
-    //bitset<12> eta_in = object->activeTowerEta(); 
-    //bitset<12> phi_in = object->activeTowerPhi();
-    //std::cout<<"eta_in: "<<eta_in<<"\t"<<"phi_in: "<<phi_in<<std::endl;
-    //etaBits.push_back(eta_in.to_string<char,std::string::traits_type,std::string::allocator_type>());
-    //phiBits.push_back(phi_in.to_string<char,std::string::traits_type,std::string::allocator_type>());
-
-    //bool activeTower[12][12];
-    //uint32_t activityLevel = object->et()*activityFraction12;
-    //for(uint32_t iPhi = 0; iPhi < 12; iPhi++){
-    //  for(uint32_t iEta = 0; iEta < 12; iEta++){
-    //    uint32_t towerET = object->boostedJetTowers()[iEta*12+iPhi];
-    //    //std::cout<<towerET<<std::endl;
-    //    if(towerET > activityLevel) {
-    //      activeTower[iEta][iPhi] = true;
-    //    }
-    //    else activeTower[iEta][iPhi] = false;
-    //  }
-    //}
-    //bitset<12> activeTowerEtaPattern = 0;
-    //for(uint32_t iEta = 0; iEta < 12; iEta++){
-    //  bool activeStrip = false;
-    //  for(uint32_t iPhi = 0; iPhi < 12; iPhi++){
-    //    if(activeTower[iEta][iPhi]) activeStrip = true;
-    //  }
-    //  if(activeStrip) activeTowerEtaPattern |= (0x1 << iEta);
-    //}
-    //bitset<12> activeTowerPhiPattern = 0;
-    //for(uint32_t iPhi = 0; iPhi < 12; iPhi++){
-    //  bool activeStrip = false;
-    //  for(uint32_t iEta = 0; iEta < 12; iEta++){
-    //    if(activeTower[iEta][iPhi]) activeStrip = true;
-    //  }
-    //  if(activeStrip) activeTowerPhiPattern |= (0x1 << iPhi);
-    //}
-    //etaBits12.push_back(activeTowerEtaPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
-    //phiBits12.push_back(activeTowerPhiPattern.to_string<char,std::string::traits_type,std::string::allocator_type>());
-    //int nActiveRegion = 0;
-    //for(int i = 0; i < 9; i++){
-    //  if(object->boostedJetRegionET()[i] > object->et()*0.0625 ) nActiveRegion++;
-    //}
-   // std::cout<<"nActiveRegion: "<<nActiveRegion<<std::endl;
+    jet_count++;
+    if (jet_count == 20) break; // only use upto 20 boosted jets out of 252 per event
   }
-
 
   // Accessing existing L1 seed stored in MINIAOD
   edm::Handle<BXVector<l1t::Jet>> stage2Jets;
@@ -645,36 +593,6 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   }
 
   // Start Running Analysis
-  //Handle<vector<reco::CaloJet> > jets;
-  //if(evt.getByToken(jetSrc_, jets)){//Begin Getting Reco Jets
-  //  for (const reco::CaloJet &jet : *jets) {
-  //    if(jet.pt() > recoPt_ ) {
-  //      goodJets.push_back(jet);
-  //    }
-  //  }
-  //}
-  //else
-  //  cout<<"Error getting calo jets"<<std::endl;
-
-  //Handle<vector<pat::Jet> > jetsAK8;
-
-  //if(evt.getByToken(jetSrcAK8_, jetsAK8)){//Begin Getting AK8 Jets
-  //  for (const pat::Jet &jetAK8 : *jetsAK8) {
-  //    if(jetAK8.pt() > recoPt_ ) {
-  //      nSubJets.push_back(jetAK8.subjets("SoftDropPuppi").size());
-  //      nBHadrons.push_back(jetAK8.jetFlavourInfo().getbHadrons().size());
-  //      TLorentzVector temp ;
-  //      temp.SetPtEtaPhiE(jetAK8.pt(),jetAK8.eta(),jetAK8.phi(),jetAK8.et());
-  //      ak8Jets->push_back(temp);
-  //      if(jetAK8.subjets("SoftDropPuppi").size() ==  2 && jetAK8.jetFlavourInfo().getbHadrons().size() > 1){
-  //        goodJetsAK8.push_back(jetAK8);
-  //      }
-  //    }
-  //  }
-  //}
-  //else
-  //  cout<<"Error getting AK8 jets"<<std::endl;
-
   zeroOutAllVariables();
   if(goodJetsAK8.size()>0){
 
@@ -762,13 +680,17 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   double L1DR = 0.4;
   int L1Match = 99;
   for( vector<TLorentzVector>::const_iterator l1Jet = allL1Jets->begin(); l1Jet != allL1Jets->end(); l1Jet++ ){
-    allL1Signals.push_back(false);
+    allL1Signals.push_back(0);
     allL1DR_withReco.push_back(reco::deltaR(recoEta_1, recoPhi_1, l1Jet->Eta(), l1Jet->Phi())); // store distance from the AK8 jet matched to the Higgs
     double DR = reco::deltaR(genEta_1, genPhi_1, l1Jet->Eta(), l1Jet->Phi()); // consider distance from the gen Higgs
     if(DR < L1DR) { L1Match = count; L1DR = DR; }
     count++;
   }
-  if(L1Match < 99) allL1Signals[L1Match] = true; // only one boosted Higgs in each event!
+  if(L1Match < 99) allL1Signals[L1Match] = 1; // only one boosted Higgs in each event!
+  for( vector<TLorentzVector>::const_iterator l1Jet = allL1Jets_loose->begin(); l1Jet != allL1Jets_loose->end(); l1Jet++ ){
+    allL1Jets->push_back(*l1Jet);
+    allL1Signals.push_back(2);
+  }
 
   efficiencyTree->Fill();
   inputRegions.clear();

@@ -1,7 +1,6 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-#process = cms.Process("L1TCaloSummaryTest")
 from Configuration.Eras.Era_Run2_2018_cff import Run2_2018
 process = cms.Process("L1TCaloSummaryTest", Run2_2018)
 
@@ -30,14 +29,10 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
-#process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
-process.GlobalTag = GlobalTag(process.GlobalTag, '124X_mcRun3_2022_realistic_v8', '')
-
-#process.load('L1Trigger.Configuration.SimL1Emulator_cff')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run3_mc_FULL', '')
 
 process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
 
@@ -46,19 +41,23 @@ process.load('L1Trigger.L1TCaloLayer1.simCaloStage2Layer1Digis_cfi')
 process.simCaloStage2Layer1Digis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
 process.simCaloStage2Layer1Digis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
 
-process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
+process.load('L1Trigger.L1TCaloLayer1.simCaloStage2Layer1Summary_cfi')
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
+#                                'root://cms-xrd-global.cern.ch//store/user/joeherna/Boosted_ggHbb_M-125_Pt-250_GENSIM/Boosted_ggHbb_M-125_Pt-250_MINIAOD/231115_211847/0000/RunIIAutumn18MiniAOD_test2_november13_1368980_1374280_1.root'
 				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
 ),
                             secondaryFileNames = cms.untracked.vstring(
+#                                'root://cms-xrd-global.cern.ch//store/user/joeherna/Boosted_ggHbb_M-125_Pt-250_GENSIM/Boosted_ggHbb_M-125_Pt-250_DIGIRAW/231114_123814/0000/RunIIAutumn18DRPremix_step1_test2_november13_1368980_1374280_1.root'
 				'file:/eos/user/p/pdas/L1Boosted/ggHbb/DR/RunIIAutumn18DRPremix_step1_21Dec_0_5300.root'
                             )
 )
+
+#process.source.eventsToProcess = cms.untracked.VEventRange("1:23")
 
 process.options = cms.untracked.PSet(
 
@@ -86,7 +85,7 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ggHBB.root")
 )
 
-process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
+process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.simCaloStage2Layer1Summary*process.l1NtupleProducer)
 
 process.e = cms.EndPath(process.out)
 
@@ -100,8 +99,6 @@ process = customiseEarlyDelete(process)
 # Multi-threading
 process.options.numberOfThreads=cms.untracked.uint32(8)
 process.options.numberOfStreams=cms.untracked.uint32(0)
-
-# End adding early deletion
 
 #dump_file = open('dump.py','w')
 #dump_file.write(process.dumpPython())
