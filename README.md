@@ -7,8 +7,7 @@ cmsrel CMSSW_13_3_0
 cd CMSSW_13_3_0/src/
 cmsenv
 git cms-init
-git remote add pallabidas https://github.com/pallabidas/cmssw.git
-git cms-merge-topic pallabidas:l1boosted-regioninfo-133X
+git cms-merge-topic -u pallabidas:l1boosted-regioninfo-133X
 cd L1Trigger
 git clone -b L1boosted_133X_MLtagger git@github.com:pallabidas/Run3Ntuplizer.git
 cd ..
