@@ -1,64 +1,50 @@
 import os
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("L1TCaloSummaryTest")
+from Configuration.Eras.Era_Run3_2023_cff import Run3_2023
+process = cms.Process("L1TCaloSummaryTest", Run3_2023)
 
-from FWCore.ParameterSet.VarParsing import VarParsing
-
-options = VarParsing()
-options.register('runNumber', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'Run to analyze')
-options.register('lumis', '1-max', VarParsing.multiplicity.singleton, VarParsing.varType.string, 'Lumis')
-options.register('dataStream', '/ExpressPhysics/Run2015D-Express-v4/FEVT', VarParsing.multiplicity.singleton, VarParsing.varType.string, 'Dataset to look for run in')
-options.register('inputFiles', [], VarParsing.multiplicity.list, VarParsing.varType.string, 'Manual file list input, will query DAS if empty')
-options.register('inputFileList', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, 'Manual file list input, will query DAS if empty')
-options.register('useORCON', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Use ORCON for conditions.  This is necessary for very recent runs where conditions have not propogated to Frontier')
-options.parseArguments()
-
-def formatLumis(lumistring, run) :
-    lumis = (lrange.split('-') for lrange in lumistring.split(','))
-    runlumis = (['%d:%s' % (run,lumi) for lumi in lrange] for lrange in lumis)
-    return ['-'.join(l) for l in runlumis]
-
-print ('Getting files for run %d...' % options.runNumber)
-
-# import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
-#process.load('Configuration.StandardSequences.RawToDigi_cff')
+process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
 
-#process.load('L1Trigger.Configuration.SimL1Emulator_cff')
+process.GlobalTag = GlobalTag(process.GlobalTag, '130X_mcRun3_2023_realistic_postBPix_v2', '')
 
+process.load('L1Trigger.Configuration.SimL1Emulator_cff')
 process.load('L1Trigger.Configuration.CaloTriggerPrimitives_cff')
-
 process.load('EventFilter.L1TXRawToDigi.caloLayer1Stage2Digis_cfi')
-process.load('L1Trigger.L1TCaloLayer1.simCaloStage2Layer1Digis_cfi')
-process.simCaloStage2Layer1Digis.ecalToken = cms.InputTag("l1tCaloLayer1Digis")
-process.simCaloStage2Layer1Digis.hcalToken = cms.InputTag("l1tCaloLayer1Digis")
+process.load('SimCalorimetry.HcalTrigPrimProducers.hcaltpdigi_cff')
+process.load('CalibCalorimetry.CaloTPG.CaloTPGTranscoder_cfi')
 
-process.load('L1Trigger.L1TCaloLayer1.uct2016EmulatorDigis_cfi')
+process.raw2digi_step = cms.Path(process.RawToDigi)
+process.endjob_step = cms.EndPath(process.endOfProcess)
+
+process.schedule = cms.Schedule(process.raw2digi_step, process.endjob_step)
+from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
+associatePatAlgosToolsTask(process)
+
+from L1Trigger.Configuration.customiseReEmul import L1TReEmulFromRAW
+process = L1TReEmulFromRAW(process)
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-				'file:/eos/user/p/pdas/L1Boosted/ggHbb/MiniAOD/RunIIAutumn18MiniAOD_21Dec_0_5300.root'
+                                'root://cms-xrd-global.cern.ch//store/user/joeherna/Boosted_ggHbb_M-125_Pt-250_GENSIM/Boosted_ggHbb_M-125_Pt-250_MINIAOD/231115_211847/0000/RunIIAutumn18MiniAOD_test2_november13_1368980_1374280_1.root'
 ),
                             secondaryFileNames = cms.untracked.vstring(
-				'file:/eos/user/p/pdas/L1Boosted/ggHbb/DR/RunIIAutumn18DRPremix_step1_21Dec_0_5300.root'
+                                'root://cms-xrd-global.cern.ch//store/user/joeherna/Boosted_ggHbb_M-125_Pt-250_GENSIM/Boosted_ggHbb_M-125_Pt-250_DIGIRAW/231114_123814/0000/RunIIAutumn18DRPremix_step1_test2_november13_1368980_1374280_1.root'
                             )
 )
-
-#process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange("1:734","1:961","1:966","1:982")
-#process.source.eventsToProcess = cms.untracked.VEventRange("1:960110","1:965580")
 
 process.options = cms.untracked.PSet(
 
@@ -86,12 +72,14 @@ process.TFileService = cms.Service(
 	fileName = cms.string("l1TNtuple-ggHBB.root")
 )
 
-process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.uct2016EmulatorDigis*process.l1NtupleProducer)
+process.p = cms.Path(process.l1tCaloLayer1Digis*process.simCaloStage2Layer1Digis*process.l1NtupleProducer)
+process.schedule.append(process.p)
 
 process.e = cms.EndPath(process.out)
+#process.schedule.append(process.e)
 
-#process.schedule = cms.Schedule(process.p,process.e)
-process.schedule = cms.Schedule(process.p)
+from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
+associatePatAlgosToolsTask(process)
 
 # Add early deletion of temporary data products to reduce peak memory need
 from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete

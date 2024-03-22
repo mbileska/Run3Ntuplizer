@@ -131,7 +131,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
   stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
-  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("uct2016EmulatorDigis","Boosted","")))
+  l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("simCaloStage2Layer1Summary","Boosted","")))
 {
   // Initialize the Tree
 
