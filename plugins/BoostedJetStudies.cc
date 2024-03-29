@@ -55,7 +55,7 @@
 #include "DataFormats/L1Trigger/interface/BXVector.h"
 #include "DataFormats/L1Trigger/interface/Jet.h"
 #include "DataFormats/L1Trigger/interface/Tau.h"
-#include "DataFormats/L1Trigger/interface/Muon.h"
+#include "DataFormats/L1Trigger/interface/EtSum.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -92,6 +92,7 @@ private:
 
   edm::EDGetTokenT<BXVector<l1t::Jet>> stage2JetToken_;
   edm::EDGetTokenT<BXVector<l1t::Tau>> stage2TauToken_;
+  edm::EDGetTokenT<l1t::EtSumBxCollection> stage2EtSumToken_;
   edm::EDGetTokenT<vector<l1extra::L1JetParticle>> l1BoostedToken_;
 
   TH1F* nEvents;
@@ -121,6 +122,12 @@ private:
 
   void createBranches(TTree *tree);
   TTree* efficiencyTree;
+  TH1F* leadL1Pt;
+  TH1F* leadL1Eta;
+  TH1F* leadL1Phi;
+  TH1F* leadSingleJet;
+  TH1F* EtSum_HT;
+  TH1F* EtSum_ETMHF;
   edm::Service<TFileService> tfs_;  
 
 };
@@ -131,6 +138,7 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
   stage2JetToken_(consumes<BXVector<l1t::Jet>>( edm::InputTag("caloStage2Digis","Jet","RECO"))),
   stage2TauToken_(consumes<BXVector<l1t::Tau>>( edm::InputTag("caloStage2Digis","Tau","RECO"))),
+  stage2EtSumToken_(consumes<l1t::EtSumBxCollection>( edm::InputTag("caloStage2Digis","EtSum","RECO"))),
   l1BoostedToken_(consumes<vector<l1extra::L1JetParticle>>( edm::InputTag("simCaloStage2Layer1Summary","Boosted","")))
 {
   // Initialize the Tree
@@ -139,6 +147,12 @@ BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
   nEvents      = tfs_->make<TH1F>( "nEvents"  , "nEvents", 2,  0., 1. );
   efficiencyTree = tfs_->make<TTree>("efficiencyTree", "Gen Matched Jet Tree ");
   createBranches(efficiencyTree);
+  leadL1Pt     = tfs_->make<TH1F>( "leadL1Pt", "leadL1Pt", 100, 0., 1100.);
+  leadL1Eta    = tfs_->make<TH1F>( "leadL1Eta", "leadL1Eta", 100, -5., 5.);
+  leadL1Phi    = tfs_->make<TH1F>( "leadL1Phi", "leadL1Phi", 100, -M_PI, M_PI);
+  leadSingleJet= tfs_->make<TH1F>( "leadSingleJet", "leadSingleJet", 100, 0., 1100.);
+  EtSum_HT     = tfs_->make<TH1F>( "EtSum_HT", "EtSum_HT", 100, 0., 1100.);
+  EtSum_ETMHF  = tfs_->make<TH1F>( "EtSum_ETMHF", "EtSum_ETMHF", 100, 0., 1100.);
 }
 
 BoostedJetStudies::~BoostedJetStudies() {
@@ -187,6 +201,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
     seed180->push_back(temp);
   }
+  if(seed180->size() > 0) leadSingleJet->Fill(seed180->at(0).Pt());
 
   edm::Handle<BXVector<l1t::Tau>> stage2Taus;
   if(!evt.getByToken(stage2TauToken_, stage2Taus)) cout<<"ERROR GETTING THE STAGE 2 TAUS"<<std::endl;
@@ -198,6 +213,18 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     tauseed->push_back(temp);
   }
 
+  edm::Handle<l1t::EtSumBxCollection> stage2EtSum;
+  if(!evt.getByToken(stage2EtSumToken_, stage2EtSum)) cout<<"ERROR GETTING THE STAGE 2 ETSUM"<<endl;
+  evt.getByToken(stage2EtSumToken_, stage2EtSum);
+  for (l1t::EtSumBxCollection::const_iterator obj = stage2EtSum->begin(0); obj != stage2EtSum->end(0); obj++) {
+    if(obj->getType() == l1t::EtSum::kTotalHt){
+      EtSum_HT->Fill(obj->pt());
+    }
+    if(obj->getType() == l1t::EtSum::kMissingHtHF){
+      EtSum_ETMHF->Fill(obj->pt());
+    }
+  }
+
   // Accessing L1boosted collection
   edm::Handle<vector<l1extra::L1JetParticle>> l1Boosted;
   if(!evt.getByToken(l1BoostedToken_, l1Boosted)) cout<<"ERROR GETTING THE L1BOOSTED JETS"<<std::endl;
@@ -207,6 +234,11 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
     TLorentzVector temp;
     temp.SetPtEtaPhiE(obj.pt(), obj.eta(), obj.phi(), obj.pt());
     l1Jets->push_back(temp);
+  }
+  if(l1Jets->size() > 0) {
+    leadL1Pt->Fill(l1Jets->at(0).Pt());
+    leadL1Eta->Fill(l1Jets->at(0).Eta());
+    leadL1Phi->Fill(l1Jets->at(0).Phi());
   }
 
   // Start Runing Analysis
