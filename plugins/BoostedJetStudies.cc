@@ -66,6 +66,60 @@ using namespace std;
 
 bool compareByPt (l1extra::L1JetParticle i, l1extra::L1JetParticle j) { return(i.pt()>j.pt()); };
 
+
+float getRecoEtaNew(int caloEta){
+  float eta = -999.;
+  static bool first = true;
+  static double twrEtaValues[42];
+  if(first) {
+    twrEtaValues[0] = 0;
+    for(unsigned int i = 0; i < 20; i++) {
+      twrEtaValues[i + 1] = 0.0436 + i * 0.0872;
+    }
+    twrEtaValues[21] = 1.785;
+    twrEtaValues[22] = 1.880;
+    twrEtaValues[23] = 1.9865;
+    twrEtaValues[24] = 2.1075;
+    twrEtaValues[25] = 2.247;
+    twrEtaValues[26] = 2.411;
+    twrEtaValues[27] = 2.575;
+    twrEtaValues[28] = 2.825;
+    twrEtaValues[29] = 999.;
+    twrEtaValues[30] = (3.15+2.98)/2.;
+    twrEtaValues[31] = (3.33+3.15)/2.;
+    twrEtaValues[32] = (3.50+3.33)/2.;
+    twrEtaValues[33] = (3.68+3.50)/2.;
+    twrEtaValues[34] = (3.68+3.85)/2.;
+    twrEtaValues[35] = (3.85+4.03)/2.;
+    twrEtaValues[36] = (4.03+4.20)/2.;
+    twrEtaValues[37] = (4.20+4.38)/2.;
+    twrEtaValues[38] = (4.74+4.38*3)/4.;
+    twrEtaValues[39] = (4.38+4.74*3)/4.;
+    twrEtaValues[40] = (5.21+4.74*3)/4.;
+    twrEtaValues[41] = (4.74+5.21*3)/4.;
+    first = false;
+  }
+  uint32_t absCaloEta = abs(caloEta);
+  if(absCaloEta <= 41) {
+    if(caloEta < 0)
+      eta =  -twrEtaValues[absCaloEta];
+    else
+      eta = +twrEtaValues[absCaloEta];
+  }
+  return eta;
+};
+
+float getRecoPhiNew(int caloPhi){
+  float phi = -999.;
+  if(caloPhi > 72) phi = +999.;
+  uint32_t absCaloPhi = std::abs(caloPhi) - 1;
+  if(absCaloPhi < 36)
+    phi = (((double) absCaloPhi + 0.5) * 0.0872);
+  else
+    phi = (-(71.5 - (double) absCaloPhi) * 0.0872);
+  return phi;
+};
+
 //
 // class declaration
 //
@@ -86,6 +140,8 @@ private:
 //  virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
   // ----------member data ---------------------------
+  edm::EDGetTokenT<EcalTrigPrimDigiCollection> ecalSrc_;
+  edm::EDGetTokenT<HcalTrigPrimDigiCollection> hcalSrc_;
   edm::EDGetTokenT<vector<reco::CaloJet> > jetSrc_;
   edm::EDGetTokenT<vector<pat::Jet> > jetSrcAK8_;
   edm::EDGetTokenT<reco::GenParticleCollection> genSrc_;
@@ -114,6 +170,8 @@ private:
   std::vector<std::vector<int>> subJetHFlav;
   std::vector<float> tau1, tau2, tau3;
 
+  std::vector<TLorentzVector> *ecalTPGs  = new std::vector<TLorentzVector>;
+  std::vector<TLorentzVector> *hcalTPGs  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *l1Jets  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *seed180  = new std::vector<TLorentzVector>;
   std::vector<TLorentzVector> *tauseed  = new std::vector<TLorentzVector>;
@@ -133,6 +191,8 @@ private:
 };
 
 BoostedJetStudies::BoostedJetStudies(const edm::ParameterSet& iConfig) :
+  ecalSrc_(consumes<EcalTrigPrimDigiCollection>( edm::InputTag("l1tCaloLayer1Digis"))),
+  hcalSrc_(consumes<HcalTrigPrimDigiCollection>( edm::InputTag("l1tCaloLayer1Digis"))),
   jetSrc_(    consumes<vector<reco::CaloJet> >(iConfig.getParameter<edm::InputTag>("recoJets"))),
   jetSrcAK8_( consumes<vector<pat::Jet> >(iConfig.getParameter<edm::InputTag>("recoJetsAK8"))),
   genSrc_( consumes<reco::GenParticleCollection> (iConfig.getParameter<edm::InputTag>( "genParticles"))),
@@ -178,6 +238,8 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   std::vector<pat::Jet> goodJetsAK8;
   std::vector<l1t::Jet> seeds;
 
+  ecalTPGs->clear();
+  hcalTPGs->clear();
   l1Jets->clear();
   seed180->clear();
   tauseed->clear();
@@ -189,6 +251,53 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
   tau1.clear();
   tau2.clear();
   tau3.clear();
+
+  edm::Handle<EcalTrigPrimDigiCollection> ecalTPs;
+  evt.getByToken(ecalSrc_, ecalTPs);
+  for ( const auto& ecalTp : *ecalTPs ) {
+    int caloEta = ecalTp.id().ieta();
+    int caloPhi = ecalTp.id().iphi();
+    int et = ecalTp.compressedEt();
+    if(et != 0) {
+      float eta = getRecoEtaNew(caloEta);
+      float phi = getRecoPhiNew(caloPhi);
+      TLorentzVector temp;
+      temp.SetPtEtaPhiE(et,eta,phi,et);
+      ecalTPGs->push_back(temp);
+    }
+  }
+
+  edm::Handle<HcalTrigPrimDigiCollection> hcalTPs;
+  evt.getByToken(hcalSrc_, hcalTPs);
+  for ( const auto& hcalTp : *hcalTPs ) {
+    int caloEta = hcalTp.id().ieta();
+    uint32_t absCaloEta = abs(caloEta);
+    if(absCaloEta == 29) {
+      continue;
+    }
+    else if(hcalTp.id().version() == 0 && absCaloEta > 29) {
+      continue;
+    }
+    else if(absCaloEta <= 41) {
+      int caloPhi = hcalTp.id().iphi();
+      if(caloPhi <= 72) {
+	int et = hcalTp.SOI_compressedEt();
+	if(et != 0) {
+          float eta = getRecoEtaNew(caloEta);
+          float phi = getRecoPhiNew(caloPhi);
+          TLorentzVector temp;
+          temp.SetPtEtaPhiE(et,eta,phi,et);
+          hcalTPGs->push_back(temp);
+	}
+      }
+      else {
+	std::cerr << "Illegal Tower: caloEta = " << caloEta << "; caloPhi =" << caloPhi << std::endl;
+      }
+    }
+    else {
+      std::cerr << "Illegal Tower: caloEta = " << caloEta << std::endl;
+    }
+  }
 
   // Accessing existing L1 seed stored in MINIAOD
   edm::Handle<BXVector<l1t::Jet>> stage2Jets;
@@ -394,6 +503,8 @@ void BoostedJetStudies::createBranches(TTree *tree){
     tree->Branch("nSubJets",      &nSubJets);
     tree->Branch("subJetHFlav",   &subJetHFlav);
     tree->Branch("nBHadrons",     &nBHadrons);
+    tree->Branch("ecalTPGs", "vector<TLorentzVector>", &ecalTPGs, 32000, 0);
+    tree->Branch("hcalTPGs", "vector<TLorentzVector>", &hcalTPGs, 32000, 0);
     tree->Branch("l1Jets", "vector<TLorentzVector>", &l1Jets, 32000, 0);
     tree->Branch("seed180", "vector<TLorentzVector>", &seed180, 32000, 0);
     tree->Branch("tauseed", "vector<TLorentzVector>", &tauseed, 32000, 0);
