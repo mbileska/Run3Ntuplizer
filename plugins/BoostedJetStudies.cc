@@ -426,6 +426,7 @@ void BoostedJetStudies::analyze( const edm::Event& evt, const edm::EventSetup& e
           l1Phi_1 = jet.phi();
           l1NthJet_1 = i;
           foundL1Jet_1 = 1;
+//edm::LogError("L1TCaloSummary") << "l1Pt_1: " << l1Pt_1 << ", recoPt_1: " << recoPt_1;	
         }
         i++;
       }

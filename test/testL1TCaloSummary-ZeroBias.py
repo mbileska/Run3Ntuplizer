@@ -35,6 +35,7 @@ from L1Trigger.Configuration.customiseReEmul import L1TReEmulFromRAW
 process = L1TReEmulFromRAW(process)
 
 process.load("L1Trigger.Run3Ntuplizer.l1BoostedJetStudies_cfi")
+process.simCaloStage2Layer1Summary.modelLocation = cms.string("model/")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
